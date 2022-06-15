@@ -1,0 +1,11 @@
+port 8080;
+
+location /static1/ StaticHandler {
+  root ../tests/static_files/static1;
+}
+location /static2/ StaticHandler {
+  root ../tests/static_files/static2;
+}
+
+location /echo EchoHandler {
+}

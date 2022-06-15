@@ -1,0 +1,5 @@
+# The end of a quoted token should be followed by whitespace.
+# This test should fail.
+
+'whitespace'test;
+"whitespace"test;

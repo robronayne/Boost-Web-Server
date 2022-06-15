@@ -1,0 +1,64 @@
+#include <cstdlib>
+#include <boost/bind.hpp>
+#include <boost/asio.hpp>
+#include <boost/log/trivial.hpp>
+
+#include "server.h"
+#include "http/path.h"
+
+/** 
+ * Constructor for the server class.
+ */
+server::server(session_interface& new_sesh, boost::asio::io_service& io_service, short port)
+  : io_service_(io_service),
+    session_(new_sesh),
+    acceptor_(io_service, tcp::endpoint(tcp::v4(), port)) {}
+
+/**
+ * Setter for path vector
+ */
+bool server::set_paths(std::vector<path> paths)
+{
+  paths_ = paths;
+  return true;
+}
+
+/**
+ * Create a new server and attempt to configure it.
+ * Returns true if session was acquired successfully, false otherwise
+ */
+bool server::start_accept()
+{
+  session_interface* new_session = session_.get_session(io_service_);
+  if (new_session == NULL) 
+  {
+    return false;
+  }
+  new_session->set_paths(paths_);
+  acceptor_.async_accept(new_session->socket(),
+      boost::bind(&server::handle_accept, this, new_session,
+      boost::asio::placeholders::error));
+  return true;
+}
+
+/**
+ * Pending success of accepting configuration, start a new session.
+ * Returns true if successful, false otherwise
+ */
+bool server::handle_accept(session_interface* new_session,
+    const boost::system::error_code& error)
+{
+  bool result = false;
+  if (!error)
+  {
+    new_session->start();
+    result = true;
+  }
+  else
+  {
+    delete new_session;
+  }
+
+  start_accept();
+  return result;
+}

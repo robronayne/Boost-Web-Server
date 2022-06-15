@@ -1,0 +1,15 @@
+listen 8080;
+
+static {
+  location /static1/ {
+    root /usr/bin;
+  }
+  location /static2/ {
+    root /foo/bar;
+  }
+}
+
+echo {
+  location /echo {
+  }
+}

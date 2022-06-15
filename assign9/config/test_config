@@ -1,0 +1,37 @@
+port 8080;
+
+location /static1/ StaticHandler {
+  root ../tests/static_files/static1;
+}
+location /static2/ StaticHandler {
+  root ../tests/static_files/static2;
+}
+
+location /echo EchoHandler {
+}
+
+location /api APIHandler {
+  data_path ../database;
+}
+
+location /health HealthHandler {
+}
+
+location /sleep SleepHandler {
+}
+
+location /profile ProfileHandler {
+  
+}
+
+location /auth AuthenticationHandler {
+  data_path ../tests/credentials;
+  root ../tests/credentials;
+  login /login;
+  signup /signup;
+  logout /logout;
+}
+
+location /console ApiConsoleHandler {
+  root ../tests/credentials;
+}

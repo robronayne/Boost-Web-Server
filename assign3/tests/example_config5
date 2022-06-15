@@ -1,0 +1,8 @@
+# Ensure that all blocks that are opened are closed.
+# Currently not handled, but this test should fail.
+
+closed {
+    block {
+        test {
+    }
+}

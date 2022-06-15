@@ -1,0 +1,36 @@
+port 80; # port my server listens on
+
+location /echo EchoHandler { # no arguments
+
+}
+
+location /static StaticHandler {
+  root ./files; # supports relative paths
+}
+
+location /api APIHandler {
+  data_path ./files;
+}
+
+location /health HealthHandler { # no arguments
+
+}
+
+location /sleep SleepHandler { # no arguments
+
+}
+
+location /profile ProfileHandler { # no arguments
+  
+}
+
+location /auth AuthenticationHandler {
+	root credentials; # supports relative paths
+	login /login; # individual authentication endpoints
+	signup /signup;
+	logout /logout;
+}
+
+location /console ApiConsoleHandler {
+    root credentials; # supports relative paths
+}
