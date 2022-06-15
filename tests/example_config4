@@ -1,0 +1,6 @@
+# Test parsing of empty blocks.
+# This test should pass.
+
+empty {} block {
+    test {}
+}

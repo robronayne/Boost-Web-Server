@@ -1,0 +1,8 @@
+# Test parsing of nested block directives.
+# This test should pass.
+
+nested {
+    block {
+        test;
+    }
+}

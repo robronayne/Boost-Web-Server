@@ -1,0 +1,9 @@
+# Test for backslash-escaping within strings.
+# This test should pass.
+
+"escape\"test"
+'escape\'test'
+"escape\'test";
+'escape\"test';
+"\"escape test\"";
+'\'escape test\'';
