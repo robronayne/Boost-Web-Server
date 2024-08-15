@@ -1,56 +1,63 @@
-#include "gtest/gtest.h"
-#include "reply.h"
 #include <iostream>
 #include <cstring>
 
-class replyFixture : public ::testing::Test{
-  protected:
-    reply rep;
-  
-  void SetUp() override
-  {
-    rep.headers.resize(1);
-    rep.headers[0].name = "Content-Type";
-    rep.headers[0].value = "text/plain";
-  }
+#include "http/reply.h"
+#include "gtest/gtest.h"
 
-  // Helper function to convert const buffers to strings
-  std::string buffer_to_string(std::vector<boost::asio::const_buffer>& resp, int pos) 
-  {
-    if (resp.at(pos).size() == 0)
-    {
-      return "";
-    }
-    const unsigned char* unsigned_str_ele = static_cast<const unsigned char*> (resp.at(pos).data());
-    const char* signed_str_ele = (char*) unsigned_str_ele;
-    std::string str_ele = std::string{signed_str_ele};
-    return str_ele;
-  }
+class replyFixture : public ::testing::Test
+{
+  protected:
+    reply reply_;
   
+    void SetUp() override
+    {
+      reply_.headers.resize(1);
+      reply_.headers[0].name = "Content-Type";
+      reply_.headers[0].value = "text/plain";
+    }
+
+    // Helper function to convert const buffers to strings.
+    std::string buffer_to_string(std::vector<boost::asio::const_buffer>& resp, int pos) 
+    {
+      if (resp.at(pos).size() == 0)
+      {
+        return "";
+      }
+
+      const unsigned char* unsigned_str_ele = static_cast<const unsigned char*> (resp.at(pos).data());
+      const char* signed_str_ele = (char*) unsigned_str_ele;
+      std::string str_ele = std::string{signed_str_ele};
+      return str_ele;
+    }
 };
 
+// Test reply for empty request.
+TEST_F(replyFixture, emptyRequest)
+{
+  // Setting the status code to OK (200).
+  reply_.status = reply::status_type::ok;
 
-TEST_F(replyFixture, emptyRequest){
-  // setting the status code to ok (200)
-  rep.status = reply::status_type::ok;
-
-  // test request
+  // Test request.
   std::string request = "";
 
-  // expected responding header 
+  // Expected responding header.
   std::string expected = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n";
-  // add request to the header
+  // Add request to the header.
   expected = expected + request;
 
-  // set request content
-  rep.content = request;
+  // Set request content.
+  reply_.content = request;
 
-  // get the return vector of boost::asio:const_buffer from the reply function call
+  // Get the return vector of boost::asio:const_buffer from the reply function call.
   std::vector<boost::asio::const_buffer> answer;
-  answer = rep.to_buffers();
+  answer = reply_.to_buffers();
 
-  // get the data out from the vector, 1. cast it to unsign char* 2. cast it to char*
-  // 3. convert it to string for compare 
+  /*
+   * Get the data out from the vector:
+   * 1. Cast it to unsign char* 
+   * 2. Cast it to char*
+   * 3. Convert it to string for compare 
+   */
   std::string result = "";
   for (int i = 0; i < answer.size(); i++)
   {
@@ -62,24 +69,26 @@ TEST_F(replyFixture, emptyRequest){
   EXPECT_TRUE(success);
 }
 
-TEST_F(replyFixture, someTestRequest){
-  // setting the status code to ok (200)
-  rep.status = reply::status_type::ok;
+// Test reply for sample test.
+TEST_F(replyFixture, someTestRequest)
+{
+  // Setting the status code to OK (200).
+  reply_.status = reply::status_type::ok;
 
-  // test request
+  // Test request.
   std::string request = "test request";
 
-  // expected responding header
+  // Expected responding header.
   std::string expected = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n";
-  // adding the request
+  // Adding the request.
   expected = expected + request;
 
-  // set request content
-  rep.content = request;
+  // Set request content.
+  reply_.content = request;
 
-  // get the return vector from function call
+  // Get the return vector from function call.
   std::vector<boost::asio::const_buffer> answer;
-  answer = rep.to_buffers();
+  answer = reply_.to_buffers();
 
   std::string result = "";
   std::cout << answer.size() << std::endl;
@@ -93,24 +102,26 @@ TEST_F(replyFixture, someTestRequest){
   EXPECT_TRUE(success);
 }
 
-TEST_F(replyFixture, formalRequest){
-  // setting the status code to ok (200)
-  rep.status = reply::status_type::ok;
+// Test reply for regular formal request.
+TEST_F(replyFixture, formalRequest)
+{
+  // Setting the status code to OK (200).
+  reply_.status = reply::status_type::ok;
 
-  // test request
+  // Test request.
   std::string request = "GET /docs/index.html HTTP/1.1\r\nHost: www.nowhere123.com\r\n";
 
-  // expected responding header
+  // Expected responding header.
   std::string expected = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n";
-  // add request
+  // Add request.
   expected = expected + request;
 
-  // set request content
-  rep.content = request;
+  // Set request content.
+  reply_.content = request;
 
-  // get the return vector from the function call
+  // Get the return vector from the function call.
   std::vector<boost::asio::const_buffer> answer;
-  answer = rep.to_buffers();
+  answer = reply_.to_buffers();
 
   std::string result = "";
   for (int i = 0; i < answer.size(); i++)
@@ -123,24 +134,26 @@ TEST_F(replyFixture, formalRequest){
   EXPECT_TRUE(success);
 }
 
-TEST_F(replyFixture, someTestRequestWithNotFound){
-  // setting the status code to not_found (404)
-  rep.status = reply::status_type::not_found;
+// Test reply for sample file request with not found status. 
+TEST_F(replyFixture, someTestRequestWithNotFound)
+{
+  // Setting the status code to not_found (404).
+  reply_.status = reply::status_type::not_found;
 
-  // test request
+  // Test request.
   std::string request = "test request";
 
-  // expected responding header
+  // Expected responding header.
   std::string expected = "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\n";
-  // adding the request
+  // Adding the request.
   expected = expected + request;
 
-  // set request content
-  rep.content = request;
+  // Set request content.
+  reply_.content = request;
 
-  // get the return vector from function call
+  // Get the return vector from function call.
   std::vector<boost::asio::const_buffer> answer;
-  answer = rep.to_buffers();
+  answer = reply_.to_buffers();
 
   std::string result = "";
   for (int i = 0; i < answer.size(); i++)
@@ -153,24 +166,26 @@ TEST_F(replyFixture, someTestRequestWithNotFound){
   EXPECT_TRUE(success);
 }
 
-TEST_F(replyFixture, emptyTestRequestWithNotFound){
-  // setting the status code to not_found (404)
-  rep.status = reply::status_type::not_found;
+// Test reply for empty file request with not found status.
+TEST_F(replyFixture, emptyTestRequestWithNotFound)
+{
+  // Setting the status code to not_found (404).
+  reply_.status = reply::status_type::not_found;
 
-  // test request
+  // Test request.
   std::string request = "";
 
-  // expected responding header
+  // Expected responding header.
   std::string expected = "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\n";
-  // adding the request
+  // Adding the request.
   expected = expected + request;
 
-  // set request content
-  rep.content = request;
+  // Set request content.
+  reply_.content = request;
 
-  // get the return vector from function call
+  // Get the return vector from function call.
   std::vector<boost::asio::const_buffer> answer;
-  answer = rep.to_buffers();
+  answer = reply_.to_buffers();
 
   std::string result = "";
   for (int i = 0; i < answer.size(); i++)
@@ -183,24 +198,26 @@ TEST_F(replyFixture, emptyTestRequestWithNotFound){
   EXPECT_TRUE(success);
 }
 
-TEST_F(replyFixture, FormalRequestWithNotFound){
-  // setting the status code to not_found (404)
-  rep.status = reply::status_type::not_found;
+// Test reply for unknown file request.
+TEST_F(replyFixture, FormalRequestWithNotFound)
+{
+  // Setting the status code to not_found (404).
+  reply_.status = reply::status_type::not_found;
 
-  // test request
+  // Test request.
   std::string request = "GET /docs/index.html HTTP/1.1\r\nHost: www.nowhere123.com\r\n";
 
-  // expected responding header
+  // Expected responding header.
   std::string expected = "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\n";
-  // adding the request
+  // Adding the request.
   expected = expected + request;
 
-  // set request content
-  rep.content = request;
+  // Set request content.
+  reply_.content = request;
 
-  // get the return vector from function call
+  // Get the return vector from function call.
   std::vector<boost::asio::const_buffer> answer;
-  answer = rep.to_buffers();
+  answer = reply_.to_buffers();
 
   std::string result = "";
   for (int i = 0; i < answer.size(); i++)
@@ -213,26 +230,26 @@ TEST_F(replyFixture, FormalRequestWithNotFound){
   EXPECT_TRUE(success);
 }
 
-TEST_F(replyFixture, formalBadRequest){
-  // as the default reponse is set to ok for now, the test result should be the same as ok(200)
+// Test reply for a bad request (400).
+TEST_F(replyFixture, formalBadRequest)
+{
+  // Setting the status code to bad request(400).
+  reply_.status = reply::status_type::bad_request;
 
-  // setting the status code to bad request(400)
-  rep.status = reply::status_type::bad_request;
-
-  // test request
+  // Test request.
   std::string request = "GET /docs/index.html HTTP/1.1\r\nHost: www.nowhere123.com\r\n";
 
-  // expected responding header
+  // Expected responding header.
   std::string expected = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\n\r\n";
-  // add request
+  // Add request.
   expected = expected + request;
 
-  // set request content
-  rep.content = request;
+  // Set request content.
+  reply_.content = request;
 
-  // get the return vector from the function call
+  // Get the return vector from the function call.
   std::vector<boost::asio::const_buffer> answer;
-  answer = rep.to_buffers();
+  answer = reply_.to_buffers();
 
   std::string result = "";
   for (int i = 0; i < answer.size(); i++)
@@ -245,26 +262,26 @@ TEST_F(replyFixture, formalBadRequest){
   EXPECT_TRUE(success);
 }
 
-TEST_F(replyFixture, formalUnknownRequest){
-  // as the default reponse is set to ok for now, the test result should be the same as ok(200)
+// Test reply for an unkown request.
+TEST_F(replyFixture, formalUnknownRequest)
+{
+  // Setting the status code to unknown request.
+  reply_.status = reply::status_type::unknown;
 
-  // setting the status code to bad request(400)
-  rep.status = reply::status_type::unknown;
-
-  // test request
+  // Test request.
   std::string request = "GET /docs/index.html HTTP/1.1\r\nHost: www.nowhere123.com\r\n";
 
-  // expected responding header
+  // Expected responding header.
   std::string expected = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\n\r\n";
-  // add request
+  // Add request.
   expected = expected + request;
 
-  // set request content
-  rep.content = request;
+  // Set request content.
+  reply_.content = request;
 
-  // get the return vector from the function call
+  // Get the return vector from the function call.
   std::vector<boost::asio::const_buffer> answer;
-  answer = rep.to_buffers();
+  answer = reply_.to_buffers();
 
   std::string result = "";
   for (int i = 0; i < answer.size(); i++)
@@ -277,7 +294,9 @@ TEST_F(replyFixture, formalUnknownRequest){
   EXPECT_TRUE(success);
 }
 
-TEST(replyTest, stockOkRequest){
+// Test stock reply against expected output for OK request.
+TEST(replyTest, stockOkRequest)
+{
   reply rep_ok = reply::stock_reply(reply::ok);
 
   bool success = (rep_ok.status == reply::ok &&
@@ -290,33 +309,39 @@ TEST(replyTest, stockOkRequest){
   EXPECT_TRUE(success);
 }
 
-TEST(replyTest, stockBadRequest){
-  reply rep_ok = reply::stock_reply(reply::bad_request);
+// Test stock reply against expected output for bad request.
+TEST(replyTest, stockBadRequest)
+{
+  reply bad_rep = reply::stock_reply(reply::bad_request);
 
-  bool success = (rep_ok.status == reply::bad_request &&
-                  rep_ok.content == stock_replies::bad_request &&
-                  rep_ok.headers[0].name == "Content-Length" &&
-                  rep_ok.headers[0].value == std::to_string(rep_ok.content.size()) && 
-                  rep_ok.headers[1].name == "Content-Type" &&
-                  rep_ok.headers[1].value == "text/html");
-
-  EXPECT_TRUE(success);
-}
-
-TEST(replyTest, stockNotFoundRequest){
-  reply rep_ok = reply::stock_reply(reply::not_found);
-
-  bool success = (rep_ok.status == reply::not_found &&
-                  rep_ok.content == stock_replies::not_found &&
-                  rep_ok.headers[0].name == "Content-Length" &&
-                  rep_ok.headers[0].value == std::to_string(rep_ok.content.size()) && 
-                  rep_ok.headers[1].name == "Content-Type" &&
-                  rep_ok.headers[1].value == "text/html");
+  bool success = (bad_rep.status == reply::bad_request &&
+                  bad_rep.content == stock_replies::bad_request &&
+                  bad_rep.headers[0].name == "Content-Length" &&
+                  bad_rep.headers[0].value == std::to_string(bad_rep.content.size()) && 
+                  bad_rep.headers[1].name == "Content-Type" &&
+                  bad_rep.headers[1].value == "text/html");
 
   EXPECT_TRUE(success);
 }
 
-TEST(replyTest, stockDefaultRequest){
+// Test stock reply against expected output for missing file request.
+TEST(replyTest, stockNotFoundRequest)
+{
+  reply rep_missing = reply::stock_reply(reply::not_found);
+
+  bool success = (rep_missing.status == reply::not_found &&
+                  rep_missing.content == stock_replies::not_found &&
+                  rep_missing.headers[0].name == "Content-Length" &&
+                  rep_missing.headers[0].value == std::to_string(rep_missing.content.size()) && 
+                  rep_missing.headers[1].name == "Content-Type" &&
+                  rep_missing.headers[1].value == "text/html");
+
+  EXPECT_TRUE(success);
+}
+
+// Test stock reply against expected output for default request.
+TEST(replyTest, stockDefaultRequest)
+{
   reply rep_ok = reply::stock_reply(reply::unknown);
 
   bool success = (rep_ok.status == reply::unknown &&

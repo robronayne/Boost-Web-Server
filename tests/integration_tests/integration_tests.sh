@@ -21,7 +21,7 @@ TEST_1_SUCCESS=0
 timeout $TIMEOUT curl -s -i -H "Host:" -H "User-Agent:" $SERVER_IP:$SERVER_PORT/echo > integration_test_1_result
 
 # Check if response matches expected or not
-diff integration_test_1_expected integration_test_1_result
+diff integration_tests/integration_test_1_expected integration_test_1_result
 
 RESULT=$?
 
@@ -42,7 +42,7 @@ TEST_2_SUCCESS=0
 printf "hello" | timeout $TIMEOUT nc $SERVER_IP $SERVER_PORT > integration_test_2_result
 
 # Check for empty response
-diff integration_test_2_expected integration_test_2_result
+diff integration_tests/integration_test_2_expected integration_test_2_result
 
 RESULT=$?
 
@@ -63,7 +63,7 @@ TEST_3_SUCCESS=0
 timeout $TIMEOUT curl -s -i -H "Host:" -H "User-Agent:" $SERVER_IP:$SERVER_PORT > integration_test_3_result
 
 # Check if response matches expected or not
-diff integration_test_3_expected integration_test_3_result
+diff integration_tests/integration_test_3_expected integration_test_3_result
 
 RESULT=$?
 
@@ -84,7 +84,7 @@ TEST_4_SUCCESS=0
 timeout $TIMEOUT curl -s -i -H "Host:" -H "User-Agent:" $SERVER_IP:$SERVER_PORT/static1/example.txt > integration_test_4_result
 
 # Check if response matches expected or not
-diff integration_test_4_expected integration_test_4_result
+diff integration_tests/integration_test_4_expected integration_test_4_result
 
 RESULT=$?
 
@@ -109,6 +109,3 @@ then
 fi
 
 exit 0
-
-
-

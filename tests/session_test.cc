@@ -1,12 +1,13 @@
-#include "gtest/gtest.h"
 #include "session.h"
+#include "gtest/gtest.h"
 
-class SessionFixture : public :: testing::Test {
-protected:
-  boost::asio::io_service io_service;
+class SessionFixture : public :: testing::Test 
+{
+  protected:
+    boost::asio::io_service io_service;
 };
 
-// tests to see that request is built in handle_read
+// Tests to see that request is built in handle_read.
 TEST_F(SessionFixture, SessionStart)
 {
   session s(io_service);
@@ -21,7 +22,7 @@ TEST_F(SessionFixture, SessionStart)
   EXPECT_TRUE(example == result);
 }
 
-// tests to see that request is not built in handle_read if invalid
+// Tests to see that request is not built in handle_read if invalid.
 TEST_F(SessionFixture, InvalidSessionStart)
 {
   session s(io_service);
@@ -32,7 +33,7 @@ TEST_F(SessionFixture, InvalidSessionStart)
   EXPECT_TRUE(example != result);
 }
 
-// test if socket shutdown successfully
+// Test if socket shutdown successfully.
 TEST_F(SessionFixture, TestSocketShutdown){
   session s(io_service);
   std::ostream os(&s.buffer_);
@@ -44,7 +45,7 @@ TEST_F(SessionFixture, TestSocketShutdown){
   EXPECT_TRUE(s.handle_write(ec));
 }
 
-// test if session start correctly
+// Test if session start correctly.
 TEST_F(SessionFixture, TestSessionStart){
   session s(io_service);
   EXPECT_TRUE(s.start());

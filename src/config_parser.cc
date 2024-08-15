@@ -1,23 +1,29 @@
-// An nginx config file parser.
-//
-// See:
-//   http://wiki.nginx.org/Configuration
-//   http://blog.martinfjordvald.com/2010/07/nginx-primer/
-//
-// How Nginx does it:
-//   http://lxr.nginx.org/source/src/core/ngx_conf_file.c
+/*
+ * An NGINX config file parser.
+ *
+ * See:
+ *   http://wiki.nginx.org/Configuration
+ *   http://blog.martinfjordvald.com/2010/07/nginx-primer/
+ *
+ * How Nginx does it:
+ *   http://lxr.nginx.org/source/src/core/ngx_conf_file.c
+ */
 
-#include <cstdio>
-#include <fstream>
-#include <iostream>
-#include <memory>
 #include <stack>
+#include <cstdio>
+#include <memory>
 #include <string>
 #include <vector>
+#include <fstream>
+#include <iostream>
 #include <boost/log/trivial.hpp>
 
+#include "http/path.h"
 #include "config_parser.h"
 
+/**
+ * Return string representation of NGINX configuration.
+ */
 std::string NginxConfig::ToString(int depth) {
   std::string serialized_config;
   for (const auto& statement : statements_) {
@@ -28,27 +34,27 @@ std::string NginxConfig::ToString(int depth) {
 
 /**
  * Gets the port number from a configuration file
-*/
-
+ */
 int NginxConfig::getPortNum()
 {
   int ret;
   for (auto statement : statements_)
   {
-    // if the statement is not a child block
+    // If the statement is not a child block.
     if (statement->child_block_.get() == nullptr)
     {
       if (statement->tokens_.size() == 2 && statement->tokens_[0] == "listen")
       {
         ret = stoi(statement->tokens_[1]);
-        // acceptable range for port numbers is 0 <= ret <= 65535 (0xffff) 
+        
+        // Acceptable range for port numbers is 0 <= ret <= 65535 (0xffff).
         if (ret >= 0 && ret <= 0xffff)
           return ret;
         else
           return -1;
       }
     }
-    // if the statement is a child block (examine it recursively)
+    // Otherwise, if the statement is a child block (examine it recursively).
     else
     {
       ret = statement -> child_block_ -> getPortNum();
@@ -66,21 +72,25 @@ std::vector<path> NginxConfig::getPaths()
 {
   for (auto statement : statements_)
   {
+    // Locate statements containing "static" and examine their children.
     if (statement->tokens_[0] == "static" &&
         statement->child_block_.get() != nullptr)
     {
+      // Determine the endpoint location to serve on.
       for (auto child_statement : statement->child_block_->statements_)
       {
         if (child_statement->tokens_[0] == "location" && 
             child_statement->tokens_.size() >= 2 && 
             child_statement->child_block_.get() != nullptr)
         {
+          // Determine the root file location.
           for (auto location_statement : child_statement->child_block_->statements_)
           {
             if (location_statement->tokens_[0] == "root" && 
                 location_statement->tokens_.size() >= 2 && 
                 child_statement->child_block_.get() != nullptr)         
             {
+              // Create a path for the static file location and its endpoint.
               path current_path;
               current_path.type = static_;
               current_path.endpoint = child_statement->tokens_[1];
@@ -90,14 +100,17 @@ std::vector<path> NginxConfig::getPaths()
           }        
         }
       }
+    // Locate statements containing "echo" and examine their children.
     } else if (statement->tokens_[0] == "echo" &&
                statement->child_block_.get() != nullptr)
     {
+      // Determine the endpoint location to serve on.
       for (auto child_statement : statement->child_block_->statements_)
       {
         if (child_statement->tokens_[0] == "location" && 
             child_statement->tokens_.size() >= 2)
         {
+          // Create a path for containing the endpoint for the echo.
           path current_path;
           current_path.type = echo;
           current_path.endpoint = child_statement->tokens_[1];
@@ -111,6 +124,9 @@ std::vector<path> NginxConfig::getPaths()
   return paths;
 }
 
+/**
+ * Return string represenation of a configuration to a depth.
+ */
 std::string NginxConfigStatement::ToString(int depth) {
   std::string serialized_statement;
   for (int i = 0; i < depth; ++i) {
@@ -136,8 +152,13 @@ std::string NginxConfigStatement::ToString(int depth) {
   return serialized_statement;
 }
 
-const char* NginxConfigParser::TokenTypeAsString(TokenType type) {
-  switch (type) {
+/**
+ * Return the string associated with a given token type.
+ */
+const char* NginxConfigParser::TokenTypeAsString(TokenType type) 
+{
+  switch (type) 
+  {
     case TOKEN_TYPE_START:         return "TOKEN_TYPE_START";
     case TOKEN_TYPE_NORMAL:        return "TOKEN_TYPE_NORMAL";
     case TOKEN_TYPE_START_BLOCK:   return "TOKEN_TYPE_START_BLOCK";
@@ -150,8 +171,11 @@ const char* NginxConfigParser::TokenTypeAsString(TokenType type) {
   }
 }
 
-NginxConfigParser::TokenType NginxConfigParser::ParseToken(std::istream* input,
-                                                           std::string* value) {
+/**
+ * Parse individual tokens from input stream.
+ */
+NginxConfigParser::TokenType NginxConfigParser::ParseToken(std::istream* input, std::string* value) 
+{
   TokenParserState state = TOKEN_STATE_INITIAL_WHITESPACE;
   TokenParserState prev_state = TOKEN_STATE_INITIAL_WHITESPACE;
   while (input->good()) {
@@ -267,12 +291,20 @@ NginxConfigParser::TokenType NginxConfigParser::ParseToken(std::istream* input,
   return TOKEN_TYPE_EOF;
 }
 
-bool NginxConfigParser::Parse(std::istream* config_file, NginxConfig* config) {
+/**
+ * Parse NGINX configuration from byte stream.
+ */
+bool NginxConfigParser::Parse(std::istream* config_file, NginxConfig* config) 
+{
+  // Generate configuration stack and push on the NGINX configuration.
   std::stack<NginxConfig*> config_stack;
   config_stack.push(config);
+
+  // Initialize the last token as the start of the file.
   TokenType last_token_type = TOKEN_TYPE_START;
   TokenType token_type;
-  // keeps track of start and end blocks to make sure they are all closed
+
+  // Keeps track of start and end blocks to make sure they are all closed.
   int token_block = 0;
   while (true) {
     std::string token;
@@ -349,21 +381,27 @@ bool NginxConfigParser::Parse(std::istream* config_file, NginxConfig* config) {
   }
 
   BOOST_LOG_TRIVIAL(error) << "Bad transition from " 
-                          << TokenTypeAsString(last_token_type)
-                          << TokenTypeAsString(token_type);
+                           << TokenTypeAsString(last_token_type)
+                           << TokenTypeAsString(token_type);
   return false;
 }
 
-bool NginxConfigParser::Parse(const char* file_name, NginxConfig* config) {
+/**
+ * Parse configuration from specified file.
+ */
+bool NginxConfigParser::Parse(const char* file_name, NginxConfig* config) 
+{
+  // Open configuration file.
   std::ifstream config_file;
   config_file.open(file_name);
+  
+  // Check if the configuration file was opened successfully.
   if (!config_file.good()) {
     BOOST_LOG_TRIVIAL(error) << "Failed to open config file: " << file_name;
     return false;
   }
 
-  const bool return_value =
-      Parse(dynamic_cast<std::istream*>(&config_file), config);
+  const bool return_value = Parse(dynamic_cast<std::istream*>(&config_file), config);
   config_file.close();
   return return_value;
 }

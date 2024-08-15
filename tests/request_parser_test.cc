@@ -1,143 +1,143 @@
-#include "gtest/gtest.h"
-#include "request_parser.h"
-#include "request.h"
-
 #include <cstring>
 #include <boost/asio.hpp>
+
+#include "http/request.h"
+#include "gtest/gtest.h"
+#include "request_parser.h"
 
 class requestParserFixture : public ::testing::Test
 {
   protected:
-    request_parser p;
-    request r;
-    boost::asio::streambuf b;
+    request_parser parser_;
+    request request_;
+    boost::asio::streambuf buf;
     request_parser::result_type result;
 };
 
-// Test for normal request
+// Test for normal request.
 TEST_F(requestParserFixture, normalRequest)
 {
-  // set test input
-  std::ostream os(&b);
+  // Set test input.
+  std::ostream os(&buf);
   std::string example = "GET /docs/index.html HTTP/1.1\r\nHost: www.nowhere123.com"
                         "\r\n .test\r\nContent-Type: plain/text\r\n\r\n";
   os << example;
 
-  // parse input
-  std::istreambuf_iterator<char> st{&b}, end;
-  std::tie(result, std::ignore) = p.parse(
-    r, st, end);
+  // Parse input.
+  std::istreambuf_iterator<char> st{&buf}, end;
+  std::tie(result, std::ignore) = parser_.parse(
+    request_, st, end);
 
-  // check request struct correctness
-  bool success = (r.original_req == "GET /docs/index.html HTTP/1.1\r\nHost: www.nowhere123.com"
-                                    "\r\n .test\r\nContent-Type: plain/text\r\n\r\n" &&
-                  r.method == "GET" &&
-                  r.uri == "/docs/index.html" &&
-                  r.http_version_major == 1 &&
-                  r.http_version_minor == 1 &&
-                  r.headers[0].name == "Host" &&
-                  r.headers[0].value == "www.nowhere123.com.test" &&
-                  r.headers[1].name == "Content-Type" &&
-                  r.headers[1].value == "plain/text" &&
+  // Check request struct correctness.
+  bool success = (request_.original_req == "GET /docs/index.html HTTP/1.1\r\nHost: www.nowhere123.com"
+                                           "\r\n .test\r\nContent-Type: plain/text\r\n\r\n" &&
+                  request_.method == "GET" &&
+                  request_.uri == "/docs/index.html" &&
+                  request_.http_version_major == 1 &&
+                  request_.http_version_minor == 1 &&
+                  request_.headers[0].name == "Host" &&
+                  request_.headers[0].value == "www.nowhere123.com.test" &&
+                  request_.headers[1].name == "Content-Type" &&
+                  request_.headers[1].value == "plain/text" &&
                   result == request_parser::good);
 
   EXPECT_TRUE(success);
 }
 
-// Test for incomplete request
+// Test for incomplete request.
 TEST_F(requestParserFixture, indeterminateRequest)
 {
-  // reset parser state
-  p.reset();
+  // Reset parser state.
+  parser_.reset();
 
-  // set test input
-  std::ostream os(&b);
+  // Set test input.
+  std::ostream os(&buf);
   std::string example = "GET";
   os << example;
 
-  // parse input
-  std::istreambuf_iterator<char> st{&b}, end;
-  std::tie(result, std::ignore) = p.parse(
-    r, st, end);
+  // Parse input.
+  std::istreambuf_iterator<char> st{&buf}, end;
+  std::tie(result, std::ignore) = parser_.parse(
+    request_, st, end);
 
-  // check request struct correctness
-  bool success = (r.original_req == example &&
+  // Check request struct correctness.
+  bool success = (request_.original_req == example &&
                   result == request_parser::indeterminate);
 
   EXPECT_TRUE(success);
 }
 
-// Test for no method in header
+// Test for no method in header.
 TEST_F(requestParserFixture, emptyRequest)
 {
-  // reset parser state
-  p.reset();
+  // Reset parser state.
+  parser_.reset();
 
-  // set test input
-  std::ostream os(&b);
+  // Set test input.
+  std::ostream os(&buf);
   std::string example = "(\r\n\r\n";
   os << example;
 
-  // parse input
-  std::istreambuf_iterator<char> st{&b}, end;
-  std::tie(result, std::ignore) = p.parse(
-    r, st, end);
+  // Parse input.
+  std::istreambuf_iterator<char> st{&buf}, end;
+  std::tie(result, std::ignore) = parser_.parse(
+    request_, st, end);
 
-  // check request struct correctness
-  bool success = (r.original_req == "(" &&
+  // Check request struct correctness.
+  bool success = (request_.original_req == "(" &&
                   result == request_parser::bad);
 
   EXPECT_TRUE(success);
 }
 
-// Test for no uri in header
+// Test for no URI in header.
 TEST_F(requestParserFixture, onlyMethodRequest)
 {
-  // reset parser state
-  p.reset();
+  // Reset parser state.
+  parser_.reset();
 
-  // set test input
-  std::ostream os(&b);
+  // Set test input.
+  std::ostream os(&buf);
   std::string example = "GET\r\n\r\n";
   os << example;
 
-  // parse input
-  std::istreambuf_iterator<char> st{&b}, end;
-  std::tie(result, std::ignore) = p.parse(
-    r, st, end);
+  // Parse input.
+  std::istreambuf_iterator<char> st{&buf}, end;
+  std::tie(result, std::ignore) = parser_.parse(
+    request_, st, end);
 
-  // check request struct correctness
-  bool success = (r.method == "GET" &&
+  // Check request struct correctness.
+  bool success = (request_.method == "GET" &&
                   result == request_parser::bad);
 
   EXPECT_TRUE(success);
 }
 
-// Test for no HTTP information in header
+// Test for no HTTP information in header.
 TEST_F(requestParserFixture, onlyMethodURIRequest)
 {
-  // reset parser state
-  p.reset();
+  // Reset parser state.
+  parser_.reset();
 
-  // set test input
-  std::ostream os(&b);
+  // Set test input.
+  std::ostream os(&buf);
   std::string example = "GET /\r\n\r\n";
   os << example;
 
-  // parse input
-  std::istreambuf_iterator<char> st{&b}, end;
-  std::tie(result, std::ignore) = p.parse(
-    r, st, end);
+  // Parse input.
+  std::istreambuf_iterator<char> st{&buf}, end;
+  std::tie(result, std::ignore) = parser_.parse(
+    request_, st, end);
 
-  // check request struct correctness
-  bool success = (r.method == "GET" &&
-                  r.uri == "/" &&
+  // Check request struct correctness.
+  bool success = (request_.method == "GET" &&
+                  request_.uri == "/" &&
                   result == request_parser::bad);
 
   EXPECT_TRUE(success);
 }
 
-// Test for partial HTTP information in header
+// Test for partial HTTP information in header.
 TEST_F(requestParserFixture, partialHTTPRequest)
 {
   bool success = true;
@@ -146,128 +146,132 @@ TEST_F(requestParserFixture, partialHTTPRequest)
   
   for (int i = 0; i < 8; i++)
   {
-    // reset parser state
-    p.reset();
+    // Reset parser state.
+    parser_.reset();
     boost::asio::streambuf v;
 
-    // set test input
+    // Set test input.
     std::ostream os(&v);
     std::string example = "GET / " + inputs[i] + "\r\n\r\n";
     os << example;
 
-    // parse input
+    // Parse input.
     std::istreambuf_iterator<char> st{&v}, end;
-    std::tie(result, std::ignore) = p.parse(
-        r, st, end);
+    std::tie(result, std::ignore) = parser_.parse(
+      request_, st, end);
 
-    // check request struct correctness
-    success = (r.method == "GET" &&
-               r.uri == "/" &&
+    // Check request struct correctness.
+    success = (request_.method == "GET" &&
+               request_.uri == "/" &&
                result == request_parser::bad &&
                success);
 
-    r.method.clear();
-    r.uri.clear();
+    request_.method.clear();
+    request_.uri.clear();
   }
 
   EXPECT_TRUE(success);
 }
 
-// Test for incorrectly terminated request header
+// Test for incorrectly terminated request header.
 TEST_F(requestParserFixture, invalidTerminationRequest)
 { 
-  // reset parser state
-  p.reset();
+  // Reset parser state.
+  parser_.reset();
 
-  // set test input
-  std::ostream os(&b);
+  // Set test input.
+  std::ostream os(&buf);
   std::string example = "GET / HTTP/1.1\t\n";
   os << example;
 
-  // parse input
-  std::istreambuf_iterator<char> st{&b}, end;
-  std::tie(result, std::ignore) = p.parse(
-    r, st, end);
+  // Parse input.
+  std::istreambuf_iterator<char> st{&buf}, end;
+  std::tie(result, std::ignore) = parser_.parse(
+    request_, st, end);
 
-  // check request struct correctness
-  bool success = (r.method == "GET" &&
-                  r.uri == "/" &&
-                  r.http_version_major == 1 &&
-                  r.http_version_minor == 1 &&
+  // Check request struct correctness.
+  bool success = (request_.method == "GET" &&
+                  request_.uri == "/" &&
+                  request_.http_version_major == 1 &&
+                  request_.http_version_minor == 1 &&
                   result == request_parser::bad);
 
   EXPECT_TRUE(success);
 }
 
-// Test for more than single digits in http major version
+// Test for more than single digits in HTTP major version.
 TEST_F(requestParserFixture, longHTTPMajorVersionRequest)
 { 
-  // reset parser state
-  p.reset();
+  // Reset parser state.
+  parser_.reset();
 
-  // set test input
-  std::ostream os(&b);
+  // Set test input.
+  std::ostream os(&buf);
   std::string example = "GET / HTTP/10.1\r\n\r\n";
   os << example;
 
-  // parse input
-  std::istreambuf_iterator<char> st{&b}, end;
-  std::tie(result, std::ignore) = p.parse(
-      r, st, end);
+  // Parse input.
+  std::istreambuf_iterator<char> st{&buf}, end;
+  std::tie(result, std::ignore) = parser_.parse(
+      request_, st, end);
 
-  // check request struct correctness
-  bool success = (r.method == "GET" &&
-                    r.uri == "/" &&
-                    r.http_version_major == 10 &&
+  // Check request struct correctness.
+  bool success = (request_.method == "GET" &&
+                    request_.uri == "/" &&
+                    request_.http_version_major == 10 &&
                     result == request_parser::good);
 
   EXPECT_TRUE(success);
 }
 
-// Test for more than single digits in http minor version
+// Test for more than single digits in HTTP minor version.
 TEST_F(requestParserFixture, longHTTPMinorVersionRequest)
 {
-  // reset parser state
-  p.reset();
+  // Reset parser state.
+  parser_.reset();
 
-  // set test input
-  std::ostream os(&b);
+  // Set test input.
+  std::ostream os(&buf);
   std::string example = "GET / HTTP/1.01\r\n\r\n";
   os << example;
 
-  // parse input
-  std::istreambuf_iterator<char> st{&b}, end;
-  std::tie(result, std::ignore) = p.parse(
-      r, st, end);
+  // Parse input.
+  std::istreambuf_iterator<char> st{&buf}, end;
+  std::tie(result, std::ignore) = parser_.parse(
+      request_, st, end);
 
-  // check request struct correctness
-  bool success = (r.method == "GET" &&
-                  r.uri == "/" &&
-                  r.http_version_major == 1 &&
-                  r.http_version_minor == 1 &&
+  // Check request struct correctness.
+  bool success = (request_.method == "GET" &&
+                  request_.uri == "/" &&
+                  request_.http_version_major == 1 &&
+                  request_.http_version_minor == 1 &&
                   result == request_parser::good);
 
   EXPECT_TRUE(success);
 }
 
-// Test for second constructor
-/**TEST(echoHandlerTest, normalRequest)
-{
-  // test request
-  std::string request = "test request";
+/*
+ * Test for second constructor
+ *
+  TEST(echoHandlerTest, normalRequest)
+  {
+    // test request
+    std::string request = "test request";
 
-  // get the return reply struct from the handler function call
-  reply answer;
-  echo_handler handler(request, request.size());
-  answer = handler.get_reply();
+    // get the return reply struct from the handler function call
+    reply answer;
+    echo_handler handler(request, request.size());
+    answer = handler.get_reply();
 
-  // check reply struct correctness
-  bool success = (answer.status == reply::ok &&
-                  answer.content == request &&
-                  answer.headers[0].name == "Content-Length" &&
-                  answer.headers[0].value == std::to_string(answer.content.size()) && 
-                  answer.headers[1].name == "Content-Type" &&
-                  answer.headers[1].value == "text/plain");
+    // check reply struct correctness
+    bool success = (answer.status == reply::ok &&
+                    answer.content == request &&
+                    answer.headers[0].name == "Content-Length" &&
+                    answer.headers[0].value == std::to_string(answer.content.size()) && 
+                    answer.headers[1].name == "Content-Type" &&
+                    answer.headers[1].value == "text/plain");
 
-  EXPECT_TRUE(success);
-}**/
+    EXPECT_TRUE(success);
+  }
+ *
+ */

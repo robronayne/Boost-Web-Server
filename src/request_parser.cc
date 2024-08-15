@@ -1,27 +1,35 @@
-//
-// request_parser.cpp
-// ~~~~~~~~~~~~~~~~~~
-//
-// Copyright (c) 2003-2019 Christopher M. Kohlhoff (chris at kohlhoff dot com)
-//
-// Distributed under the Boost Software License, Version 1.0. (See accompanying
-// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
-//
+/**
+ * request_parser.cc
+ * ~~~~~~~~~~~~~~~~~
+ *
+ * Copyright (c) 2003-2019 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+ *
+ * Distributed under the Boost Software License, Version 1.0. (See accompanying
+ * file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+ */
 
-#include "request_parser.h"
-#include "request.h"
 #include <iostream>
 
-request_parser::request_parser()
-  : state_(method_start)
-{
-}
+#include "http/request.h"
+#include "request_parser.h"
 
+/**
+ * Initialize HTTP request parser with default state.
+ */
+request_parser::request_parser()
+  : state_(method_start) {}
+
+/**
+ * Reset HTTP request parser to default state.
+ */
 void request_parser::reset()
 {
   state_ = method_start;
 }
 
+/**
+ * Parse HTTP request and construct request object.
+ */
 request_parser::result_type request_parser::consume(request& req, char input)
 {
   req.original_req.push_back(input);
@@ -281,16 +289,25 @@ request_parser::result_type request_parser::consume(request& req, char input)
   }
 }
 
+/**
+ * Returns true if input is a char.
+ */
 bool request_parser::is_char(int c)
 {
   return c >= 0 && c <= 127;
 }
 
+/**
+ * Returns true if input is a control char.
+ */
 bool request_parser::is_ctl(int c)
 {
   return (c >= 0 && c <= 31) || (c == 127);
 }
 
+/**
+ * Returns true if input is special char.
+ */
 bool request_parser::is_tspecial(int c)
 {
   switch (c)
@@ -305,6 +322,9 @@ bool request_parser::is_tspecial(int c)
   }
 }
 
+/**
+ * Returns true if input is a digit.
+ */
 bool request_parser::is_digit(int c)
 {
   return c >= '0' && c <= '9';

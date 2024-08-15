@@ -4,17 +4,15 @@
 #include <boost/log/trivial.hpp>
 
 #include "server.h"
+#include "http/path.h"
 
-/**
+/** 
  * Constructor for the server class.
  */
-server::server(session_interface& new_s, boost::asio::io_service& io_service, short port)
+server::server(session_interface& new_sesh, boost::asio::io_service& io_service, short port)
   : io_service_(io_service),
-    session_(new_s),
-    acceptor_(io_service, tcp::endpoint(tcp::v4(), port))
-{
-  
-}
+    session_(new_sesh),
+    acceptor_(io_service, tcp::endpoint(tcp::v4(), port)) {}
 
 /**
  * Setter for path vector

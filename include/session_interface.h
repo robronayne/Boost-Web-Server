@@ -4,12 +4,13 @@
 #include <cstdlib>
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
+
 #include "config_parser.h"
 
 using boost::asio::ip::tcp;
 
 /**
- * Skeleton session interface.
+ * Session interface class
  *
  * Session objects contain socket information and
  * data that is passed from a read or write operation.
@@ -17,7 +18,6 @@ using boost::asio::ip::tcp;
 class session_interface 
 {
   public:
-    // virtual ~session_interface() {};
     virtual tcp::socket& socket() = 0;
     virtual bool start() = 0;
     virtual session_interface* get_session(boost::asio::io_service& io_service) = 0;

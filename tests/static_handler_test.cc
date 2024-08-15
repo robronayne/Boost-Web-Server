@@ -1,6 +1,7 @@
-#include "gtest/gtest.h"
-#include "static_handler.h"
 #include "boost/filesystem.hpp"
+
+#include "gtest/gtest.h"
+#include "request_handler/static_handler.h"
 
 class staticHandlerFixture : public :: testing::Test
 {
@@ -10,23 +11,23 @@ class staticHandlerFixture : public :: testing::Test
     std::string base_uri = "/static1/";
 };
 
-// test normal file response
+// Test normal file response.
 TEST_F(staticHandlerFixture, normalFile)
 {
-// test request
-  std::string f = "example.html";
-  request request;  
-  request.uri = base_uri + f;
+  // Test request.
+  std::string filename = "example.html";
+  request request_;  
+  request_.uri = base_uri + filename;
 
-  // get the return reply struct from the handler function call
+  // Get the return reply struct from the handler function call.
   reply answer;
-  handler.set_request(request, root);
+  handler.set_request(request_, root);
   answer = handler.get_reply();
 
-  std::string full_path = root + "/" + f;
+  std::string full_path = root + "/" + filename;
   std::ifstream file_(full_path.c_str(), std::ios::in | std::ios::binary);
 
-  // Read from the file into the reply body
+  // Read from the file into the reply body.
   char c;
   std::string expected = "";
   while (file_.get(c))
@@ -35,7 +36,7 @@ TEST_F(staticHandlerFixture, normalFile)
   }
   file_.close();
 
-  // check reply struct correctness
+  // Check reply struct correctness.
   bool success = (answer.status == reply::ok &&
                   answer.content == expected &&
                   answer.headers[0].name == "Content-Length" &&
@@ -46,20 +47,20 @@ TEST_F(staticHandlerFixture, normalFile)
   EXPECT_TRUE(success);
 }
 
-// test bad file response
+// Test handling for non-existent file.
 TEST_F(staticHandlerFixture, badFile)
 {
-// test request
-  std::string f = "doesnotexist";
-  request request;  
-  request.uri = base_uri + f;
+  // Test request.
+  std::string filename = "doesnotexist";
+  request request_;  
+  request_.uri = base_uri + filename;
 
-  // get the return reply struct from the handler function call
+  // Get the return reply struct from the handler function call.
   reply answer;
-  handler.set_request(request, root);
-  answer = handler.get_reply();\
+  handler.set_request(request_, root);
+  answer = handler.get_reply();
 
-  // check reply struct correctness
+  // Check reply struct correctness.
   bool success = (answer.status == reply::not_found);
 
   EXPECT_TRUE(success);

@@ -4,7 +4,9 @@
 #include "gmock/gmock.h"
 
 /**
- * Mock session class.
+ * Mock session class
+ *
+ * Inherits from session_interface
  */
 class mock_session: public session_interface 
 {

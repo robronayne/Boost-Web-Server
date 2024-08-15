@@ -41,14 +41,14 @@ find_package(Threads REQUIRED)
 add_library(server_lib src/server.cc)
 add_library(session_lib src/session.cc)
 add_library(config_parser_lib src/config_parser.cc)
-add_library(echo_handler_lib src/echo_handler.cc)
+add_library(echo_handler_lib src/request_handler/echo_handler.cc)
 add_library(request_parser_lib src/request_parser.cc)
-add_library(error_hander_lib src/error_handler.cc)
-add_library(mime_types_lib src/mime_types.cc)
-add_library(static_handler_lib src/static_handler.cc)
+add_library(error_hander_lib src/request_handler/error_handler.cc)
+add_library(mime_types_lib src/http/mime_types.cc)
+add_library(static_handler_lib src/request_handler/static_handler.cc)
 
 # Add for reply test
-add_library(reply_lib src/reply.cc)
+add_library(reply_lib src/http/reply.cc)
 
 # Updated executable name, srcs, and deps
 add_executable(webserver src/server_main.cc)
@@ -112,7 +112,7 @@ gtest_discover_tests(mime_types_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DI
 gtest_discover_tests(static_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
 # Add integration test
-add_test(NAME integration_tests COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/integration_tests.sh WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+add_test(NAME integration_tests COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/integration_tests/integration_tests.sh WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
 # Generate target/test targets
 include(cmake/CodeCoverageReportConfig.cmake)
