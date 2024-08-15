@@ -10,6 +10,8 @@
 namespace beast = boost::beast;
 namespace http = beast::http;
 
+static const double SLEEPY_TIME = 250000;   // in microseconds!
+
 /** 
  * Parent class for request interface objects. Request handlers 
  * are designed to return a HTTP reply given different requests 

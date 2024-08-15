@@ -9,6 +9,8 @@
 #include "request_handler_factory/static_handler_factory.h"
 #include "request_handler_factory/_404_handler_factory.h"
 #include "request_handler_factory/api_handler_factory.h"
+#include "request_handler_factory/health_handler_factory.h"
+#include "request_handler_factory/sleep_handler_factory.h"
 
 /** 
  * Constructor for the server class.
@@ -25,6 +27,17 @@ bool server::set_paths(std::vector<path> paths)
 {
   paths_ = paths;
   return true;
+}
+
+/* Makes the server multithreaded */
+void server::run()
+{
+  boost::asio::thread_pool pool(NUM_THREADS);
+  for (int i = 0; i < NUM_THREADS; ++i)
+  {
+      boost::asio::post(pool, boost::bind(&boost::asio::io_service::run, &io_service_));
+  }
+  pool.join();
 }
 
 /**
@@ -86,7 +99,13 @@ std::map<std::string, request_handler_factory*> server::create_handler_factory(p
       routes[p.endpoint] = new echo_handler_factory(p.endpoint, p);
     break;
     case endpoint_type::api_:
-      routes[p.endpoint] = new api_handler_factory(p.endpoint, p, &entity_manager_);
+      routes[p.endpoint] = new api_handler_factory(p.endpoint, p);
+    break;
+    case endpoint_type::health:
+      routes[p.endpoint] = new health_handler_factory(p.endpoint, p);
+    break;
+    case endpoint_type::sleep_:
+      routes[p.endpoint] = new sleep_handler_factory(p.endpoint, p);
     break;
     case endpoint_type::not_found:
       routes[p.endpoint] = new _404_handler_factory(p.endpoint, p);

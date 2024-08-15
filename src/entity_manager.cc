@@ -5,16 +5,15 @@
 /*
 Source: https://stackoverflow.com/questions/26576714/deleting-specific-line-from-file
 */
-void eraseFileLine(std::string eraseLine) {
+void entity_manager::eraseFileLine(std::string eraseLine) {
     std::string line;
     std::ifstream fin;
-	std::string path = "entity_info.txt";
     
-    fin.open(path);
+    fin.open(data_path_);
     // contents of path must be copied to a temp file then
     // renamed back to the path file
     std::ofstream temp;
-    temp.open("temp.txt");
+    temp.open(temp_path_);
 
     while (getline(fin, line)) {
         // write all lines to temp other than the line marked for erasing
@@ -26,22 +25,24 @@ void eraseFileLine(std::string eraseLine) {
     fin.close();
 
     // required conversion for remove and rename functions
-    const char *p = path.c_str();
+    const char *p = data_path_.c_str();
     std::remove(p);
-    std::rename("temp.txt", p);
+    std::rename(temp_path_.c_str(), p);
 }
 
-entity_manager::entity_manager()
+entity_manager::entity_manager(std::string data_path)
 {
 
 	std::string input1;
 	ent_id input3;
-	std::ifstream fin("entity_info.txt", std::ios::in);
+	temp_path_ = data_path + "/" + "temp.txt";
+	data_path_ = data_path + "/" + "entity_info.txt";
+	std::ifstream fin(data_path_, std::ios::in);
 
-	boost::filesystem::path ent_file_path("entity_info.txt");
+	boost::filesystem::path ent_file_path(data_path_);
 
 	if (boost::filesystem::exists(ent_file_path)) {
-		std::ifstream fin("entity_info.txt", std::ios::in);
+		std::ifstream fin(data_path_, std::ios::in);
 		while (fin >> input3.type) {
 			fin >> input3.id_ >> input1;
 			id_map[input3].path = input1;
@@ -93,7 +94,7 @@ bool entity_manager::insert(entity& e)
 	if (!e_file)
 		return false;
 	
-  	std::ofstream write_info("entity_info.txt", std::ios_base::app);
+	std::ofstream write_info(data_path_, std::ios_base::app);
 	write_info << e.type << " " << e.id << " " << e.path << std::endl;
 	e_file << e.data;
 	e_file.close();
@@ -136,7 +137,7 @@ bool entity_manager::insert_with_id(entity& e)
 	if (!e_file)
 		return false;
 	
-  	std::ofstream write_info("entity_info.txt", std::ios_base::app);
+	std::ofstream write_info(data_path_, std::ios_base::app);
 	write_info << e.type << " " << e.id << " " << e.path << std::endl;
 	e_file << e.data;
 	e_file.close();
@@ -199,7 +200,7 @@ const entity* entity_manager::get(ent_id id_)
 
 std::string entity_manager::get_ids_by_type(std::string type_)
 {
-	if (!type_exists(type_))
+	if (!type_exists(type_) || type_map[type_].empty())
 		return "[]";
 	
 	/*
@@ -234,8 +235,17 @@ bool entity_manager::type_exists(std::string type_)
 	return (type_map.find(type_) != type_map.end());
 }
 
+/* Find the next available id by searching for an available one */
 unsigned int entity_manager::generate_next_id(std::string type_)
 {
 	type_to_id[type_]++;
+    ent_id e_id;
+    e_id.id_ = type_to_id[type_];
+    e_id.type = type_;
+    while (exists(e_id))
+    {
+        type_to_id[type_]++;
+        e_id.id_ = type_to_id[type_]++;
+    }
 	return type_to_id[type_];
 }

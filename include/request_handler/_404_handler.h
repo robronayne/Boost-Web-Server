@@ -22,6 +22,8 @@ class _404_handler : public request_handler_interface
     http::status serve(const http::request<http::dynamic_body> req, http::response<http::dynamic_body>& res);
 
   private:
+    void log_message_info(std::string res_code);
+
     std::string location_;
     std::string request_url_;
     http::status err_code;

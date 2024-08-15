@@ -20,7 +20,7 @@ create an object of this class to manage all the entities.
 class entity_manager {
 
   public:
-    entity_manager();
+    entity_manager(std::string data_path);
     bool insert(entity& entity_);
     bool insert_with_id(entity& entity_);
     bool update(ent_id id, std::string data_);
@@ -29,6 +29,7 @@ class entity_manager {
     bool exists(ent_id id);
     bool type_exists(std::string type_);
     std::string get_ids_by_type(std::string type_);
+    void eraseFileLine(std::string eraseLine);
 
   private:
 
@@ -60,6 +61,9 @@ class entity_manager {
 
     // Private function to generate the next ID for a given type
     unsigned int generate_next_id(std::string type_);
+
+    std::string data_path_;
+    std::string temp_path_;
 
 };
 

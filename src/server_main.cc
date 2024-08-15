@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
 
     BOOST_LOG_TRIVIAL(info) << "Now accepting connections";
 
-    io_service.run();
+    serv.run();
   } 
   catch (std::exception& err)
   {

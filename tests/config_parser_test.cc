@@ -120,22 +120,29 @@ TEST_F(NginxTestFixture, SimplePathParse)
   parser.Parse("test_config/example_config10", &out_config);
   std::vector<path> paths = out_config.getPaths();
 
-  bool echo_match = (paths[0].type == echo && 
+  bool echo_match = (paths[0].type == echo &&
                      paths[0].endpoint == "/echo");
-  bool static_match = (paths[1].type == static_ && 
-                       paths[1].endpoint == "/static" && 
+
+  bool static_match = (paths[1].type == static_ &&
+                       paths[1].endpoint == "/static" &&
                        paths[1].info_map["root"] == "./files");
-  
-  bool api_match = (paths[2].type == api_ && 
-                       paths[2].endpoint == "/api" && 
+
+  bool api_match = (paths[2].type == api_ &&
+                       paths[2].endpoint == "/api" &&
                        paths[2].info_map["data_path"] == "./files");
 
-  bool match = (echo_match && static_match && api_match);
+  bool health_match = (paths[3].type == health &&
+                       paths[3].endpoint == "/health");
+
+  bool sleep_match = (paths[4].type == sleep_ &&
+                      paths[4].endpoint == "/sleep");
+
+  bool match = (echo_match && static_match && api_match && health_match && sleep_match);
   EXPECT_TRUE(match);
 }
 
 // Test with a missing semicolon.
-TEST_F(NginxTestFixture, MissingSemicolon) 
+TEST_F(NginxTestFixture, MissingSemicolon)
 {
   bool success = parser.Parse("test_config/example_config11", &out_config);
   EXPECT_FALSE(success);

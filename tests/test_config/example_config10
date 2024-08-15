@@ -11,3 +11,11 @@ location /static StaticHandler {
 location /api APIHandler {
   data_path ./files;
 }
+
+location /health HealthHandler { # no arguments
+
+}
+
+location /sleep SleepHandler { # no arguments
+
+}

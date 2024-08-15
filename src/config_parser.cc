@@ -157,13 +157,34 @@ std::vector<path> NginxConfig::getPaths()
           }
         }
       }
+      // If the statement is directed towards a HealthHandler
+      // with a child block.
+      else if (statement->tokens_[2] == "HealthHandler" &&
+          statement->child_block_.get() != nullptr &&
+          statement->tokens_.size() == 3)
+      {
+        path current_path;
+        current_path.type = health;
+        current_path.endpoint = formatURL(statement->tokens_[1]);
+        paths.push_back(current_path);
+      }
+
+      else if (statement->tokens_[2] == "SleepHandler" &&
+          statement->child_block_.get() != nullptr &&
+          statement->tokens_.size() == 3)
+      {
+        path current_path;
+        current_path.type = sleep_;
+        current_path.endpoint = formatURL(statement->tokens_[1]);
+        paths.push_back(current_path);
+      }
       /**
-       * This is catch-all else statement for invalid location statements. 
+       * This is catch-all else statement for invalid location statements.
        *
        * - Look for any statments beginning with a "location" token.
        * - Now determine if one of the following conditions holds:
        *    1. The the number of tokens in the statement is not equal to 3
-       *    2. The third token is neither "EchoHandler" nor "StaticHandler"
+       *    2. The third token is not one of the specified Handlers
        *    3. The statement does not have a child block
        *
        * If any of these above three statements hold for a "location" statement,

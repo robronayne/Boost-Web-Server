@@ -1,6 +1,7 @@
 #include <regex>
 #include <string>
 #include <string_view>
+#include <boost/log/trivial.hpp>
 
 #include "http/mime_types.h"
 #include "request_handler/static_handler.h"
@@ -37,6 +38,9 @@ http::status static_handler::serve(const http::request<http::dynamic_body> req, 
       beast::ostream(res.body()) << utility.get_stock_reply(res.result_int());
       res.content_length((res.body().size()));
       res.set(http::field::content_type, "text/html");
+
+      log_message_info("404");
+
       return res.result();
   }
 
@@ -48,6 +52,9 @@ http::status static_handler::serve(const http::request<http::dynamic_body> req, 
       beast::ostream(res.body()) << utility.get_stock_reply(res.result_int());
       res.content_length((res.body().size()));
       res.set(http::field::content_type, "text/html");
+
+      log_message_info("404");
+
       return res.result();
   }
   
@@ -64,5 +71,20 @@ http::status static_handler::serve(const http::request<http::dynamic_body> req, 
   beast::ostream(res.body()) << reply_body;
   res.content_length((res.body().size()));
   res.set(http::field::content_type, extension_to_type(extension));
+
+  log_message_info("200");
+
   return res.result();
+}
+
+void static_handler::log_message_info(std::string res_code)
+{
+  BOOST_LOG_TRIVIAL(info) << "[ResponseMetrics] "
+                          << "response_code: "
+                          << res_code
+                          << " "
+                          << "request_path: "
+                          << request_url_
+                          << " "
+                          << "matched_handler: static handler";
 }

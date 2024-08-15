@@ -11,9 +11,7 @@
 
 #include "session.h"
 #include "http/path.h"
-#include "request_handler/echo_handler.h"
 #include "request_handler/error_handler.h"
-#include "request_handler/static_handler.h"
 
 namespace http = boost::beast::http;
 
@@ -112,6 +110,12 @@ std::string session::handle_read(const boost::system::error_code& error,
   {
     log_message_info("bad request", "request parser");
     log_message_info(request_string, "request parser result");
+
+    // Error handler
+    request_handler_interface* handler = new error_handler(http::status::bad_request, request_string);
+    write_to_socket(handler);
+
+    delete handler;
     delete this;
   }
   return request_string;

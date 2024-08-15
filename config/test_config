@@ -13,3 +13,9 @@ location /echo EchoHandler {
 location /api APIHandler {
   data_path ../database;
 }
+
+location /health HealthHandler {
+}
+
+location /sleep SleepHandler {
+}

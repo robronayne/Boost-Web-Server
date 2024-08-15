@@ -3,13 +3,16 @@
 
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
-#include "entity_manager.h"
+#include <boost/thread/thread.hpp>
+
 #include "session_interface.h"
 #include "request_handler_factory/request_handler_factory.h"
 #include <map>
 #include <string>
 
 using boost::asio::ip::tcp;
+
+static const int NUM_THREADS = 4;
 
 /**
  * Web server class.
@@ -22,7 +25,8 @@ class server
 {
   public:
     server(session_interface& new_s, boost::asio::io_service& io_service, short port);
-
+    
+    void run();
     bool start_accept();
     bool handle_accept(session_interface* new_session, const boost::system::error_code& error);
     bool set_paths(std::vector<path> paths);
@@ -36,7 +40,6 @@ class server
     tcp::acceptor acceptor_;
     std::vector<path> paths_;
     std::map<std::string, request_handler_factory*> routes;
-    entity_manager entity_manager_;
 };
 
 #endif

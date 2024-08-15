@@ -24,9 +24,9 @@ Example, /api/Shoes/1 -> ["api", "Shoes", "1"]
 void split_request(std::string req_target, std::vector<std::string>& fields)
 {
   
-  // Start after the intial slash
-  auto start = 1U;
-  auto end = req_target.find("/", 1);
+  // Start after the initial slash
+  unsigned int start = 1U;
+  std::size_t end = req_target.find("/", 1);
 
   // keep finding the next slash and appending the substrings
   while (end != std::string::npos)
@@ -80,16 +80,15 @@ bool prepare_id(ent_id& id, std::vector<std::string>& fields)
   return true;
 }
 
-api_handler::api_handler(std::string location, std::string root_file_path, 
-                           std::string request_url, entity_manager* entity_manager)
+api_handler::api_handler(std::string location, std::string root_file_path, std::string request_url)
  : location_(location),
    root_(root_file_path),
    request_url_(request_url),
-   e_manager(entity_manager) {}
+   e_manager(root_file_path) {}
 
 http::status api_handler::serve(const http::request<http::dynamic_body> req, http::response<http::dynamic_body>& res)
 {
-	http::verb req_method = req.method();
+  http::verb req_method = req.method();
   std::string req_target = req.target().to_string();
   std::vector<std::string> uri_fields;
   split_request(req_target, uri_fields);
@@ -99,8 +98,8 @@ http::status api_handler::serve(const http::request<http::dynamic_body> req, htt
     case http::verb::get:
     {
       // if it's a request for a list of ID's return that
-      if (e_manager->type_exists(req_target)) {
-        std::string reply_body = e_manager->get_ids_by_type(req_target);
+      if (e_manager.type_exists(req_target)) {
+        std::string reply_body = e_manager.get_ids_by_type(req_target);
         beast::ostream(res.body()) << reply_body;
         res.result(http::status::ok);
         res.content_length(res.body().size());
@@ -119,7 +118,7 @@ http::status api_handler::serve(const http::request<http::dynamic_body> req, htt
       }
 
       // get entity data and populate response
-      const entity* ent = e_manager->get(id);
+      const entity* ent = e_manager.get(id);
       if (ent != nullptr) {
         res.result(http::status::ok);
         std::string reply_body = ent->get_data();
@@ -148,7 +147,11 @@ http::status api_handler::serve(const http::request<http::dynamic_body> req, htt
       std::string new_data = boost::beast::buffers_to_string(req.body().data());
 
       // attempt to update entity file
-      if (e_manager->update(id, new_data)) {
+      mu.lock();
+      bool updated = e_manager.update(id, new_data);
+      mu.unlock();
+
+      if (updated) {
         res.result(http::status::ok);
         std::string reply_body = req_target + " updated successfully.";
         beast::ostream(res.body()) << reply_body;
@@ -171,7 +174,11 @@ http::status api_handler::serve(const http::request<http::dynamic_body> req, htt
         new_entity.path = root_ + "/" + type_ + "/";
         new_entity.type = req_target;
 
-        if (e_manager->insert_with_id(new_entity)) {
+        mu.lock();
+        bool inserted = e_manager.insert_with_id(new_entity);
+        mu.unlock();
+
+        if (inserted) {
           res.result(http::status::ok);
           std::string reply_body = "{\"id\": " + std::to_string(new_entity.id) + "}";
           beast::ostream(res.body()) << reply_body;
@@ -195,7 +202,11 @@ http::status api_handler::serve(const http::request<http::dynamic_body> req, htt
       }
 
       // attempt to delete entity and entity file
-      if (e_manager->remove(id)) {
+      mu.lock();
+      bool removed = e_manager.remove(id);
+      mu.unlock();
+
+      if (removed) {
         res.result(http::status::ok);
         std::string reply_body = req_target + " deleted successfully.";
         beast::ostream(res.body()) << reply_body;
@@ -233,7 +244,11 @@ http::status api_handler::serve(const http::request<http::dynamic_body> req, htt
       new_entity.type = req_target;
 
       // attempt to insert the newly created entity
-      if (e_manager->insert(new_entity)) {
+      mu.lock();
+      bool inserted = e_manager.insert(new_entity);
+      mu.unlock();
+      
+      if (inserted) {
         res.result(http::status::ok);
         std::string reply_body = "{\"id\": " + std::to_string(new_entity.id) + "}";
         beast::ostream(res.body()) << reply_body;
@@ -251,5 +266,29 @@ http::status api_handler::serve(const http::request<http::dynamic_body> req, htt
     break;
   }
 
+  log_message_info(res.result(), req_target);
+
   return res.result();
+}
+
+void api_handler::log_message_info(http::status code, std::string req_path)
+{
+  int res_code;
+  switch(code)
+  {
+    case http::status::ok :
+      res_code = 200;
+      break;
+    case http::status::bad_request :
+      res_code = 400;
+      break;
+  }
+  BOOST_LOG_TRIVIAL(info) << "[ResponseMetrics] "
+                          << "response_code: "
+                          << res_code
+                          << " "
+                          << "request_path: "
+                          << req_path
+                          << " "
+                          << "matched_handler: api handler";
 }

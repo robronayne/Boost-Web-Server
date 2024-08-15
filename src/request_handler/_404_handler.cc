@@ -1,4 +1,5 @@
 #include "request_handler/_404_handler.h"
+#include <boost/log/trivial.hpp>
 
 /**
  * Generate an 404 handler with specified message for specific request.
@@ -15,5 +16,20 @@ http::status _404_handler::serve(const http::request<http::dynamic_body> req, ht
   beast::ostream(res.body()) << utility.get_stock_reply(res.result_int());
   res.content_length((res.body().size()));
   res.set(http::field::content_type, "text/html");
+
+  log_message_info("404");
+
   return http::status::not_found;
+}
+
+void _404_handler::log_message_info(std::string res_code)
+{
+  BOOST_LOG_TRIVIAL(info) << "[ResponseMetrics] "
+                          << "response_code: "
+                          << res_code
+                          << " "
+                          << "request_path: "
+                          << request_url_
+                          << " "
+                          << "matched_handler: 404 handler";
 }

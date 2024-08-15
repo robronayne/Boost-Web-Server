@@ -1,26 +1,25 @@
-#ifndef ECHO_HANDLER_H
-#define ECHO_HANDLER_H
+#ifndef SLEEP_HANDLER_H
+#define SLEEP_HANDLER_H
 
 #include <string>
-#include <vector>
-
+#include <boost/log/trivial.hpp>
 #include "request_handler_interface.h"
 
 /**
- * Echo handler class
+ * Sleep handler class
  *
  * Inherits from request_handler_interface
  *
- * The echo handler constructs the appropriate echo
- * response given a location and request_url.
+ * The sleep handler delays the response before returning a generic response.
  *
- * The function serve constructs the echo response
+ * The function serve constructs the sleep response
  * with the appropriate headers.
  */
-class echo_handler : public request_handler_interface
+
+class sleep_handler : public request_handler_interface
 {
   public:
-    echo_handler(std::string location, std::string request_url);
+    sleep_handler(std::string location, std::string request_url);
     http::status serve(const http::request<http::dynamic_body> req, http::response<http::dynamic_body>& res);
 
   private:
@@ -28,7 +27,6 @@ class echo_handler : public request_handler_interface
 
     std::string location_;
     std::string request_url_;
-    util utility;
 };
 
 #endif

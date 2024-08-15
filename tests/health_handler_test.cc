@@ -1,19 +1,19 @@
 #include <cstring>
-#include <iostream>
 #include <boost/asio/buffers_iterator.hpp>
 
 #include "gtest/gtest.h"
-#include "request_handler/error_handler.h"
+#include "request_handler/health_handler.h"
 
-// Test the error handler for a file not found status type.
-TEST(errorHandlerTest, notFoundCode)
+// Test for health request body.
+TEST(healthHandlerTest, normalRequest)
 {
   // Sample request to test.
   http::request<http::dynamic_body> request_;  
+  request_.target("/health");
 
   // Get the return reply struct from the handler function call.
   http::response<http::dynamic_body> answer;
-  error_handler handler(http::status::not_found, "not found path");
+  health_handler handler("/health", "test url");
   http::status status_ = handler.serve(request_, answer);
 
   std::string body { boost::asio::buffers_begin(answer.body().data()),
@@ -27,32 +27,33 @@ TEST(errorHandlerTest, notFoundCode)
     header.second = std::string(field.value());
     headers.push_back(header);
   }
-  
-  util utility;
-  std::string expected_body = utility.get_stock_reply(404);
 
   // Check reply struct correctness.
-  bool success = (answer.result() == http::status::not_found &&
-                  body == expected_body &&
+  bool success = (answer.result() == http::status::ok &&
+                  body == "OK" &&
                   answer.has_content_length() &&
-                  headers.at(0).first == "Content-Length" &&
-                  headers.at(0).second == std::to_string(expected_body.size()) &&
                   headers.at(1).first == "Content-Type" &&
-                  headers.at(1).second == "text/html" &&
+                  headers.at(1).second == "text/plain" &&
                   status_ == answer.result());
 
   EXPECT_TRUE(success);
 }
 
-// Test the error handler for a bad request status type, explicitly set.
-TEST(errorHandlerTest, badRequestCode)
+// Test for bad request target
+TEST(healthHandlerTest, badRequestTarget)
 {
   // Sample request to test.
   http::request<http::dynamic_body> request_;  
+  request_.target("/health/bad");
+  beast::ostream(request_.body()) << "test request";
+
+  std::ostringstream ostring;
+  ostring << request_;
+  std::string request_string = ostring.str();
 
   // Get the return reply struct from the handler function call.
   http::response<http::dynamic_body> answer;
-  error_handler handler(http::status::bad_request, "bad request");
+  health_handler handler("/health", "test url");
   http::status status_ = handler.serve(request_, answer);
 
   std::string body { boost::asio::buffers_begin(answer.body().data()),
@@ -66,18 +67,9 @@ TEST(errorHandlerTest, badRequestCode)
     header.second = std::string(field.value());
     headers.push_back(header);
   }
-  
-  util utility;
-  std::string expected_body = utility.get_stock_reply(400);
 
   // Check reply struct correctness.
-  bool success = (answer.result() == http::status::bad_request &&
-                  body == expected_body &&
-                  answer.has_content_length() &&
-                  headers.at(0).first == "Content-Length" &&
-                  headers.at(0).second == std::to_string(expected_body.size()) &&
-                  headers.at(1).first == "Content-Type" &&
-                  headers.at(1).second == "text/html" &&
+  bool success = (answer.result() == http::status::not_found && 
                   status_ == answer.result());
 
   EXPECT_TRUE(success);

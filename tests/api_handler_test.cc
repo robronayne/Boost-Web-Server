@@ -1,6 +1,5 @@
 #include "request_handler/api_handler.h"
 #include "gtest/gtest.h"
-#include "entity_manager.h"
 #include "entity.h"
 #include <string>
 #include <boost/filesystem.hpp>
@@ -18,12 +17,11 @@ class ApiHandlerTestFixture : public  ::testing::Test
         std::string root = "../database";
         http::request<http::dynamic_body> request_;
         http::response<http::dynamic_body> response_;
-        entity_manager e_manager;    
 };
 
 TEST_F(ApiHandlerTestFixture, Create) {
     std::string request_url = "/api/test";
-    api_handler handler(location, root, request_url, &e_manager);
+    api_handler handler(location, root, request_url);
     request_.method(http::verb::post);
     request_.target(request_url);
 
@@ -53,7 +51,7 @@ TEST_F(ApiHandlerTestFixture, Create) {
 
 TEST_F(ApiHandlerTestFixture, List) {
     std::string request_url = "/api/test";
-    api_handler handler(location, root, request_url, &e_manager);
+    api_handler handler(location, root, request_url);
     request_.method(http::verb::post);
     request_.target(request_url);
 
@@ -84,7 +82,7 @@ TEST_F(ApiHandlerTestFixture, List) {
 
 TEST_F(ApiHandlerTestFixture, Retrieve) {
     std::string request_url = "/api/test";
-    api_handler handler(location, root, request_url, &e_manager);
+    api_handler handler(location, root, request_url);
     request_.method(http::verb::post);
     boost::beast::ostream(request_.body()) << "{\"name\": \"jklm\"}";
     request_.target(request_url);
@@ -115,7 +113,7 @@ TEST_F(ApiHandlerTestFixture, Retrieve) {
 
 TEST_F(ApiHandlerTestFixture, Update) {
     std::string request_url = "/api/test";
-    api_handler handler(location, root, request_url, &e_manager);
+    api_handler handler(location, root, request_url);
     request_.method(http::verb::post);
     boost::beast::ostream(request_.body()) << "{\"name\": \"jklm\"}";
     request_.target(request_url);
@@ -151,7 +149,7 @@ TEST_F(ApiHandlerTestFixture, Update) {
 
 TEST_F(ApiHandlerTestFixture, Delete) {
     std::string request_url = "/api/test";
-    api_handler handler(location, root, request_url, &e_manager);
+    api_handler handler(location, root, request_url);
     request_.method(http::verb::post);
     boost::beast::ostream(request_.body()) << "{\"name\": \"jklm\"}";
     request_.target(request_url);
@@ -187,7 +185,7 @@ TEST_F(ApiHandlerTestFixture, Delete) {
 
 TEST_F(ApiHandlerTestFixture, RetrieveNotFound) {
     std::string request_url = "/api/test/11";
-    api_handler handler(location, root, request_url, &e_manager);
+    api_handler handler(location, root, request_url);
     request_.method(http::verb::get);
     request_.target(request_url);
 
@@ -215,7 +213,7 @@ TEST_F(ApiHandlerTestFixture, RetrieveNotFound) {
 
 TEST_F(ApiHandlerTestFixture, UpdateNotFound) {
     std::string request_url = "/api/test/11";
-    api_handler handler(location, root, request_url, &e_manager);
+    api_handler handler(location, root, request_url);
     request_.method(http::verb::put);
     request_.target(request_url);
 
@@ -240,7 +238,7 @@ TEST_F(ApiHandlerTestFixture, UpdateNotFound) {
 
 TEST_F(ApiHandlerTestFixture, DeleteNotFound) {
     std::string request_url = "/api/test/1111";
-    api_handler handler(location, root, request_url, &e_manager);
+    api_handler handler(location, root, request_url);
     request_.method(http::verb::delete_);
     request_.target(request_url);
 
@@ -266,7 +264,7 @@ TEST_F(ApiHandlerTestFixture, DeleteNotFound) {
 
 TEST_F(ApiHandlerTestFixture, InvalidVerb) {
     std::string request_url = "/api/test/11";
-    api_handler handler(location, root, request_url, &e_manager);
+    api_handler handler(location, root, request_url);
     request_.method_string("lll");
     request_.target(request_url);
 

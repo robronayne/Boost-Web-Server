@@ -104,7 +104,7 @@ fi
 # TEST 5: Valid Create
 # Clean the test dir
 rm -rf ../database/test
-rm -rf entity_info.txt
+rm -rf ../database/entity_info.txt
 sleep 0.1
 
 # Curl server and create
@@ -149,7 +149,7 @@ fi
 TEST_7_SUCCESS=0
 
 # Curl server and get one entity
-timeout $TIMEOUT curl -s -i -X GET -H "Host:" -H "User-Agent:" $SERVER_IP:$SERVER_PORT/api/test/12 > integration_test_7_result
+timeout $TIMEOUT curl -s -i -X GET -H "Host:" -H "User-Agent:" $SERVER_IP:$SERVER_PORT/api/test/1 > integration_test_7_result
 
 # Check if file exists or not
 diff integration_tests/integration_test_7_expected integration_test_7_result
@@ -211,7 +211,51 @@ else
 fi
 
 rm -rf ../database/test
-rm -rf entity_info.txt
+rm -rf ../database/entity_info.txt
+
+# TEST 10: Valid HTTP health request to server
+TEST_10_SUCCESS=0
+
+# Curl server and save response with the host and user-agent headers removed
+timeout $TIMEOUT curl -s -i -H "Host:" -H "User-Agent:" $SERVER_IP:$SERVER_PORT/health > integration_test_10_result
+
+# Check if response matches expected or not
+diff integration_tests/integration_test_10_expected integration_test_10_result
+
+RESULT=$?
+
+rm integration_test_10_result
+
+if [ $RESULT -eq 0 ];
+then
+    TEST_10_SUCCESS=1
+    echo "Test 10 Success"
+else
+    echo "Test 10 Failure"
+fi
+
+# TEST 11: Multithreading confirmation
+TEST_11_SUCCESS=0
+
+# Curl server and save responses with the host and user-agent headers removed
+timeout $TIMEOUT curl -s -i -H "Host:" -H "User-Agent:" $SERVER_IP:$SERVER_PORT/sleep >> integration_test_11_result &
+timeout $TIMEOUT curl -s -i -H "Host:" -H "User-Agent:" $SERVER_IP:$SERVER_PORT/echo >> integration_test_11_result &
+sleep 0.5
+
+# Ensure the correct order of sleep and echo responses
+slept=$( grep -n "slept" integration_test_11_result | grep -oE "^[0-9]+" )
+echo_=$( grep -n "echo" integration_test_11_result | grep -oE "^[0-9]+" )
+
+rm integration_test_11_result
+
+# Need slept to appear after echo
+if [ $slept -gt $echo_ ] 
+then
+  TEST_11_SUCCESS=1
+  echo "Test 11 Success"
+else 
+  echo "Test 11 Failure"
+fi
 
 # Stop server
 kill -9 $SERVER_PID
@@ -219,8 +263,10 @@ kill -9 $SERVER_PID
 # Return success or failure
 if [ $TEST_1_SUCCESS -ne 1 ] || [ $TEST_2_SUCCESS -ne 1 ] || 
    [ $TEST_3_SUCCESS -ne 1 ] || [ $TEST_4_SUCCESS -ne 1 ] || 
-   [ $TEST_6_SUCCESS -ne 1 ] || [ $TEST_7_SUCCESS -ne 1 ] || 
-   [ $TEST_8_SUCCESS -ne 1 ] || [ $TEST_9_SUCCESS -ne 1 ];
+   [ $TEST_5_SUCCESS -ne 1 ] || [ $TEST_6_SUCCESS -ne 1 ] ||
+   [ $TEST_7_SUCCESS -ne 1 ] || [ $TEST_8_SUCCESS -ne 1 ] ||
+   [ $TEST_9_SUCCESS -ne 1 ] || [ $TEST_10_SUCCESS -ne 1 ] ||
+   [ $TEST_11_SUCCESS -ne 1 ];
 then
     exit 1
 fi
