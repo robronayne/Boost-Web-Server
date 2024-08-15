@@ -133,3 +133,169 @@ TEST_F(replyFixture, formalRequest){
 
   EXPECT_TRUE(success);
 }
+
+TEST_F(replyFixture, someTestRequestWithNotFound){
+  // setting the status code to not_found (404)
+  rep.status = reply::status_type::not_found;
+
+  // test request
+  std::string request = "test request";
+
+  // expected responding header
+  std::string expected = "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\n";
+  // adding the request
+  expected = expected + request;
+
+  // get the return vector from function call
+  std::vector<boost::asio::const_buffer> answer;
+  answer = rep.to_buffers(request, request.size());
+
+  const unsigned char* unsigned_status_line = static_cast<const unsigned char*> (answer.at(0).data());
+  const char* signed_status_line = (char*) unsigned_status_line;
+  std::string str_status_line = std::string{signed_status_line};
+  std::string result = str_status_line;
+
+  const unsigned char* unsigned_type_line = static_cast<const unsigned char*> (answer.at(1).data());
+  const char* signed_type_line = (char*) unsigned_type_line;
+  std::string str_type_line = std::string{signed_type_line};
+  result = result + str_type_line;
+
+  const unsigned char* unsigned_crlf = static_cast<const unsigned char*> (answer.at(2).data());
+  const char* signed_crlf = (char*) unsigned_crlf;
+  std::string str_crlf = std::string{signed_crlf};
+  result = result + str_crlf;
+
+  const unsigned char* unsigned_request = static_cast<const unsigned char*> (answer.at(3).data());
+  const char* signed_request = (char*) unsigned_request;
+  std::string str_request = std::string{signed_request};
+  result = result + str_request;
+
+  bool success = (expected == result);
+
+  EXPECT_TRUE(success);
+}
+
+TEST_F(replyFixture, emptyTestRequestWithNotFound){
+  // setting the status code to not_found (404)
+  rep.status = reply::status_type::not_found;
+
+  // test request
+  std::string request = "";
+
+  // expected responding header
+  std::string expected = "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\n";
+  // adding the request
+  expected = expected + request;
+
+  // get the return vector from function call
+  std::vector<boost::asio::const_buffer> answer;
+  answer = rep.to_buffers(request, request.size());
+
+  const unsigned char* unsigned_status_line = static_cast<const unsigned char*> (answer.at(0).data());
+  const char* signed_status_line = (char*) unsigned_status_line;
+  std::string str_status_line = std::string{signed_status_line};
+  std::string result = str_status_line;
+
+  const unsigned char* unsigned_type_line = static_cast<const unsigned char*> (answer.at(1).data());
+  const char* signed_type_line = (char*) unsigned_type_line;
+  std::string str_type_line = std::string{signed_type_line};
+  result = result + str_type_line;
+
+  const unsigned char* unsigned_crlf = static_cast<const unsigned char*> (answer.at(2).data());
+  const char* signed_crlf = (char*) unsigned_crlf;
+  std::string str_crlf = std::string{signed_crlf};
+  result = result + str_crlf;
+
+  const unsigned char* unsigned_request = static_cast<const unsigned char*> (answer.at(3).data());
+  const char* signed_request = (char*) unsigned_request;
+  std::string str_request = std::string{signed_request};
+  result = result + str_request;
+
+  bool success = (expected == result);
+
+  EXPECT_TRUE(success);
+}
+
+TEST_F(replyFixture, FormalRequestWithNotFound){
+  // setting the status code to not_found (404)
+  rep.status = reply::status_type::not_found;
+
+  // test request
+  std::string request = "GET /docs/index.html HTTP/1.1\r\nHost: www.nowhere123.com\r\n";
+
+  // expected responding header
+  std::string expected = "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\n";
+  // adding the request
+  expected = expected + request;
+
+  // get the return vector from function call
+  std::vector<boost::asio::const_buffer> answer;
+  answer = rep.to_buffers(request, request.size());
+
+  const unsigned char* unsigned_status_line = static_cast<const unsigned char*> (answer.at(0).data());
+  const char* signed_status_line = (char*) unsigned_status_line;
+  std::string str_status_line = std::string{signed_status_line};
+  std::string result = str_status_line;
+
+  const unsigned char* unsigned_type_line = static_cast<const unsigned char*> (answer.at(1).data());
+  const char* signed_type_line = (char*) unsigned_type_line;
+  std::string str_type_line = std::string{signed_type_line};
+  result = result + str_type_line;
+
+  const unsigned char* unsigned_crlf = static_cast<const unsigned char*> (answer.at(2).data());
+  const char* signed_crlf = (char*) unsigned_crlf;
+  std::string str_crlf = std::string{signed_crlf};
+  result = result + str_crlf;
+
+  const unsigned char* unsigned_request = static_cast<const unsigned char*> (answer.at(3).data());
+  const char* signed_request = (char*) unsigned_request;
+  std::string str_request = std::string{signed_request};
+  result = result + str_request;
+
+  bool success = (expected == result);
+
+  EXPECT_TRUE(success);
+}
+
+TEST_F(replyFixture, formalRequestUnkown){
+  // as the default reponse is set to ok for now, the test result should be the same as ok(200)
+
+  // setting the status code to unknow (999)
+  rep.status = reply::status_type::unknow;
+
+  // test request
+  std::string request = "GET /docs/index.html HTTP/1.1\r\nHost: www.nowhere123.com\r\n";
+
+  // expected responding header
+  std::string expected = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n";
+  // add request
+  expected = expected + request;
+
+  // get the return vector from the function call
+  std::vector<boost::asio::const_buffer> answer;
+  answer = rep.to_buffers(request, request.size());
+
+  const unsigned char* unsigned_status_line = static_cast<const unsigned char*> (answer.at(0).data());
+  const char* signed_status_line = (char*) unsigned_status_line;
+  std::string str_status_line = std::string{signed_status_line};
+  std::string result = str_status_line;
+
+  const unsigned char* unsigned_type_line = static_cast<const unsigned char*> (answer.at(1).data());
+  const char* signed_type_line = (char*) unsigned_type_line;
+  std::string str_type_line = std::string{signed_type_line};
+  result = result + str_type_line;
+
+  const unsigned char* unsigned_crlf = static_cast<const unsigned char*> (answer.at(2).data());
+  const char* signed_crlf = (char*) unsigned_crlf;
+  std::string str_crlf = std::string{signed_crlf};
+  result = result + str_crlf;
+
+  const unsigned char* unsigned_request = static_cast<const unsigned char*> (answer.at(3).data());
+  const char* signed_request = (char*) unsigned_request;
+  std::string str_request = std::string{signed_request};
+  result = result + str_request;
+
+  bool success = (expected == result);
+
+  EXPECT_TRUE(success);
+}

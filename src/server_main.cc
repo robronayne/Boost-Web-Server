@@ -41,7 +41,11 @@ int main(int argc, char* argv[])
 
     boost::asio::io_service io_service;
 
-    server s(io_service, port);
+    session s(io_service);
+
+    server serv(s, io_service, port);
+
+    serv.start_accept();
 
     io_service.run();
   }

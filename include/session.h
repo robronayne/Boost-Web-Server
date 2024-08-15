@@ -5,6 +5,8 @@
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
 
+#include "session_interface.h"
+
 using boost::asio::ip::tcp;
 
 /**
@@ -17,19 +19,20 @@ using boost::asio::ip::tcp;
  * the boost library to write to a designated socket or read
  * from one respectively.
  */
-class session 
+class session : public session_interface
 {
   private:
     tcp::socket socket_;
     enum { max_length = 1024 };
-    boost::asio::streambuf request_;
-    void handle_read(const boost::system::error_code& error,
-      size_t bytes_transferred);
-    void handle_write(const boost::system::error_code& error);
   public:
     session(boost::asio::io_service& io_service);
     tcp::socket& socket();
-    void start();
+    bool start();
+    std::string handle_read(const boost::system::error_code& error,
+      size_t bytes_transferred);
+    bool handle_write(const boost::system::error_code& error);
+    session_interface* get_session(boost::asio::io_service& io_service);
+    boost::asio::streambuf request_;
 };
 
 #endif

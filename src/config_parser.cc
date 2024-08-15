@@ -219,6 +219,8 @@ bool NginxConfigParser::Parse(std::istream* config_file, NginxConfig* config) {
   config_stack.push(config);
   TokenType last_token_type = TOKEN_TYPE_START;
   TokenType token_type;
+  // keeps track of start and end blocks to make sure they are all closed
+  int token_block = 0;
   while (true) {
     std::string token;
     token_type = ParseToken(config_file, &token);
@@ -257,6 +259,7 @@ bool NginxConfigParser::Parse(std::istream* config_file, NginxConfig* config) {
         break;
       }
     } else if (token_type == TOKEN_TYPE_START_BLOCK) {
+      token_block++;
       if (last_token_type != TOKEN_TYPE_NORMAL) {
         // Error.
         break;
@@ -266,6 +269,7 @@ bool NginxConfigParser::Parse(std::istream* config_file, NginxConfig* config) {
           new_config);
       config_stack.push(new_config);
     } else if (token_type == TOKEN_TYPE_END_BLOCK) {
+      token_block--;
       if (last_token_type != TOKEN_TYPE_STATEMENT_END &&
           last_token_type != TOKEN_TYPE_START_BLOCK &&
           last_token_type != TOKEN_TYPE_END_BLOCK) {
@@ -275,8 +279,9 @@ bool NginxConfigParser::Parse(std::istream* config_file, NginxConfig* config) {
       }
       config_stack.pop();
     } else if (token_type == TOKEN_TYPE_EOF) {
-      if (last_token_type != TOKEN_TYPE_STATEMENT_END &&
-          last_token_type != TOKEN_TYPE_END_BLOCK) {
+      if ((last_token_type != TOKEN_TYPE_STATEMENT_END &&
+          last_token_type != TOKEN_TYPE_END_BLOCK) ||
+          token_block != 0) {
         // Error.
         break;
       }

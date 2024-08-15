@@ -5,6 +5,7 @@
 #include <boost/asio.hpp>
 
 #include "session.h"
+#include "session_interface.h"
 
 using boost::asio::ip::tcp;
 
@@ -19,12 +20,13 @@ class server
 {
   private:
     boost::asio::io_service& io_service_;
+    session_interface& session_;
     tcp::acceptor acceptor_;
-    void start_accept();
-    void handle_accept(session* new_session,
-      const boost::system::error_code& error);
   public:
-    server(boost::asio::io_service& io_service, short port);
-};    
+    bool start_accept();
+    bool handle_accept(session_interface* new_session,
+      const boost::system::error_code& error);
+    server(session_interface& new_s, boost::asio::io_service& io_service, short port);
+};
 
 #endif

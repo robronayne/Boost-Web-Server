@@ -42,9 +42,8 @@ add_library(server_lib src/server.cc)
 add_library(session_lib src/session.cc)
 add_library(config_parser_lib src/config_parser.cc)
 
-# -- add for reply test
+# Add for reply test
 add_library(reply_lib src/reply.cc)
-
 
 # Updated executable name, srcs, and deps
 add_executable(webserver src/server_main.cc)
@@ -52,20 +51,28 @@ add_executable(config_parser_test tests/config_parser_test.cc)
 target_link_libraries(webserver server_lib session_lib config_parser_lib reply_lib Boost::system Threads::Threads)
 target_link_libraries(config_parser_test config_parser_lib gtest_main)
 
+# Add for server_test
+add_executable(server_test tests/server_test.cc)
+target_link_libraries(server_test server_lib session_lib reply_lib gmock_main)
+
+# Add for session_test
+add_executable(session_test tests/session_test.cc)
+target_link_libraries(session_test session_lib reply_lib gtest_main)
+
 # Updated reply test name, srcs, and deps
 add_executable(reply_test tests/reply_test.cc)
-target_link_libraries(reply_test reply_lib gtest_main gmock_main)
+target_link_libraries(reply_test reply_lib gtest_main)
 
-# TODO(!): Update with test binary
+# Set testing directory
 gtest_discover_tests(config_parser_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
-# gtest_discover_tests(example_lib_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(reply_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(server_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(session_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
+# Add integration test
+add_test(NAME integration_tests COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/integration_tests.sh WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
-
-# TODO(!): Update with target/test targets
+# Generate target/test targets
 include(cmake/CodeCoverageReportConfig.cmake)
-# generate_coverage_report(TARGETS example_server example_lib TESTS example_lib_test)
-generate_coverage_report(TARGETS config_parser_lib TESTS config_parser_test)
-# include(cmake/CodeCoverageReportConfig.cmake)
-generate_coverage_report(TARGETS reply_lib TESTS reply_test)
+generate_coverage_report(TARGETS config_parser_lib reply_lib server_lib session_lib 
+                         TESTS config_parser_test reply_test server_test session_test)

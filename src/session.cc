@@ -24,7 +24,7 @@ tcp::socket& session::socket()
 /**
  * Start a session with the intended configuration. Will read from a socket until \r\n\r\n is entered.
  */
-void session::start()
+bool session::start()
 {
   boost::asio::async_read_until(socket_,
       request_,
@@ -32,14 +32,16 @@ void session::start()
       boost::bind(&session::handle_read, this,
         boost::asio::placeholders::error,
         boost::asio::placeholders::bytes_transferred));
+  return true;
 }
 
 /**
  * Write to the designated socket using the data buffer. Will seperate different requests by finding \r\n\r\n.
  */
-void session::handle_read(const boost::system::error_code& error,
+std::string session::handle_read(const boost::system::error_code& error,
     size_t bytes_transferred)
 {
+  std::string ret = "";
   if (!error)
   {
     std::istream is(&request_);
@@ -49,6 +51,7 @@ void session::handle_read(const boost::system::error_code& error,
       is.get(new_input);
       total_request += new_input;
     }
+    ret = total_request;
 
     reply rep;
     boost::asio::async_write(socket_,
@@ -61,24 +64,39 @@ void session::handle_read(const boost::system::error_code& error,
   {
     delete this;
   }
+  return ret;
 }
 
 /**
- * Read from the designated socket into the data buffer. Process the same as start().
+ * Temporarily close connection after each request to ensure commands like curl work properly
  */
-void session::handle_write(const boost::system::error_code& error)
+bool session::handle_write(const boost::system::error_code& error)
 {
   if (!error)
   {
-    boost::asio::async_read_until(socket_,
+    // Close connection after request to ensure http requests are sent properly
+    boost::system::error_code ignored_ec;
+    socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ignored_ec);
+
+    return true;
+    /**boost::asio::async_read_until(socket_,
       request_,
       "\r\n\r\n",
       boost::bind(&session::handle_read, this,
         boost::asio::placeholders::error,
-        boost::asio::placeholders::bytes_transferred));
+        boost::asio::placeholders::bytes_transferred));**/
   }
   else
   {
     delete this;
+    return false;
   }
+}
+
+/**
+ * Get a new session instance to decouple from the server class
+ */
+session_interface* session::get_session(boost::asio::io_service& io_service)
+{
+  return new session(io_service);
 }
