@@ -9,3 +9,7 @@ location /static2/ StaticHandler {
 
 location /echo EchoHandler {
 }
+
+location /api APIHandler {
+  data_path ../database;
+}

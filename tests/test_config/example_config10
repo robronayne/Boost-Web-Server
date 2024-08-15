@@ -5,5 +5,9 @@ location /echo EchoHandler { # no arguments
 }
 
 location /static StaticHandler {
-  root ./files # supports relative paths
+  root ./files; # supports relative paths
+}
+
+location /api APIHandler {
+  data_path ./files;
 }

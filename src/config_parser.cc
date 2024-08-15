@@ -139,6 +139,24 @@ std::vector<path> NginxConfig::getPaths()
           }
         }
       }
+      // If the statement is directed towards an APIHandler
+      // with a child block.
+      else if (statement->tokens_[2] == "APIHandler" &&
+               statement->child_block_.get() != nullptr &&
+               statement->tokens_.size() == 3){
+          for (const std::shared_ptr<NginxConfigStatement> child_statement : statement->child_block_->statements_)
+        {
+          // Locate "data_path" statements with corresponding path
+          if (child_statement->tokens_.size() == 2)
+          {
+            path current_path;
+            current_path.type = api_;
+            current_path.endpoint = formatURL(statement->tokens_[1]);
+            current_path.info_map[child_statement->tokens_[0]] = child_statement->tokens_[1];
+            paths.push_back(current_path);
+          }
+        }
+      }
       /**
        * This is catch-all else statement for invalid location statements. 
        *
@@ -187,7 +205,7 @@ std::vector<path> NginxConfig::getPaths()
     base_path.type = not_found;
     paths.push_back(base_path);
   }
-
+  
   return paths;
 }
 

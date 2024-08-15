@@ -43,10 +43,13 @@ add_library(session_lib src/session.cc)
 add_library(config_parser_lib src/config_parser.cc)
 add_library(echo_handler_lib src/request_handler/echo_handler.cc)
 add_library(error_hander_lib src/request_handler/error_handler.cc)
+add_library(entity_manager_lib src/entity_manager.cc)
 add_library(mime_types_lib src/http/mime_types.cc)
 add_library(static_handler_lib src/request_handler/static_handler.cc)
+add_library(api_handler_lib src/request_handler/api_handler.cc)
 add_library(echo_handler_factory_lib src/request_handler_factory/echo_handler_factory.cc)
 add_library(static_handler_factory_lib src/request_handler_factory/static_handler_factory.cc)
+add_library(api_handler_factory_lib src/request_handler_factory/api_handler_factory.cc)
 add_library(util_lib src/util.cc)
 add_library(_404_handler_lib src/request_handler/_404_handler.cc)
 add_library(_404_handler_factory_lib src/request_handler_factory/_404_handler_factory.cc)
@@ -55,9 +58,9 @@ add_library(_404_handler_factory_lib src/request_handler_factory/_404_handler_fa
 add_executable(webserver src/server_main.cc)
 add_executable(config_parser_test tests/config_parser_test.cc)
 target_link_libraries(webserver server_lib session_lib config_parser_lib
-                            echo_handler_factory_lib static_handler_factory_lib _404_handler_factory_lib
+                            echo_handler_factory_lib static_handler_factory_lib _404_handler_factory_lib api_handler_factory_lib
                             echo_handler_lib _404_handler_lib
-                            error_hander_lib static_handler_lib mime_types_lib util_lib
+                            error_hander_lib static_handler_lib api_handler_lib mime_types_lib util_lib entity_manager_lib
                             Boost::log_setup Boost::log Boost::system Threads::Threads)
 target_link_libraries(config_parser_test config_parser_lib 
                             Boost::log_setup Boost::log gtest_main)
@@ -66,9 +69,9 @@ target_link_libraries(config_parser_test config_parser_lib
 add_executable(server_test tests/server_test.cc)
 target_link_libraries(server_test server_lib session_lib
                             error_hander_lib 
-                            echo_handler_factory_lib static_handler_factory_lib _404_handler_factory_lib 
-                            echo_handler_lib static_handler_lib _404_handler_lib
-                            mime_types_lib util_lib
+                            echo_handler_factory_lib static_handler_factory_lib _404_handler_factory_lib api_handler_factory_lib
+                            echo_handler_lib static_handler_lib _404_handler_lib api_handler_lib
+                            mime_types_lib util_lib entity_manager_lib
                             Boost::log_setup Boost::log gmock_main)
 
 # Add for session_test
@@ -114,6 +117,12 @@ target_link_libraries(_404_handler_test _404_handler_lib util_lib gtest_main)
 add_executable(_404_handler_factory_test tests/_404_handler_factory_test.cc)
 target_link_libraries(_404_handler_factory_test _404_handler_factory_lib _404_handler_lib util_lib gtest_main)
 
+add_executable(api_handler_test tests/api_handler_test.cc)
+target_link_libraries(api_handler_test api_handler_lib entity_manager_lib util_lib Boost::filesystem gtest_main)
+
+add_executable(api_handler_factory_test tests/api_handler_factory_test.cc)
+target_link_libraries(api_handler_factory_test api_handler_factory_lib api_handler_lib entity_manager_lib util_lib Boost::filesystem gtest_main)
+
 # Set testing directory
 gtest_discover_tests(config_parser_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(server_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
@@ -127,11 +136,13 @@ gtest_discover_tests(static_handler_factory_test WORKING_DIRECTORY ${CMAKE_CURRE
 gtest_discover_tests(util_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(_404_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(_404_handler_factory_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(api_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(api_handler_factory_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
 # Add integration test
 add_test(NAME integration_tests COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/integration_tests/integration_tests.sh WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
 # Generate target/test targets
 include(cmake/CodeCoverageReportConfig.cmake)
-generate_coverage_report(TARGETS config_parser_lib server_lib session_lib echo_handler_lib error_hander_lib mime_types_lib static_handler_lib echo_handler_factory_lib static_handler_factory_lib util_lib _404_handler_lib _404_handler_factory_lib
-                         TESTS config_parser_test server_test session_test echo_handler_test error_handler_test mime_types_test static_handler_test echo_handler_factory_test static_handler_factory_test util_test _404_handler_test _404_handler_factory_test)
+generate_coverage_report(TARGETS config_parser_lib server_lib session_lib echo_handler_lib error_hander_lib mime_types_lib static_handler_lib echo_handler_factory_lib static_handler_factory_lib util_lib _404_handler_lib _404_handler_factory_lib api_handler_lib api_handler_factory_lib
+                         TESTS config_parser_test server_test session_test echo_handler_test error_handler_test mime_types_test static_handler_test echo_handler_factory_test static_handler_factory_test util_test _404_handler_test _404_handler_factory_test api_handler_test api_handler_test api_handler_factory_test)

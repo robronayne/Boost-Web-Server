@@ -8,6 +8,7 @@
 #include "request_handler_factory/echo_handler_factory.h"
 #include "request_handler_factory/static_handler_factory.h"
 #include "request_handler_factory/_404_handler_factory.h"
+#include "request_handler_factory/api_handler_factory.h"
 
 /** 
  * Constructor for the server class.
@@ -83,6 +84,9 @@ std::map<std::string, request_handler_factory*> server::create_handler_factory(p
     break;
     case endpoint_type::echo:
       routes[p.endpoint] = new echo_handler_factory(p.endpoint, p);
+    break;
+    case endpoint_type::api_:
+      routes[p.endpoint] = new api_handler_factory(p.endpoint, p, &entity_manager_);
     break;
     case endpoint_type::not_found:
       routes[p.endpoint] = new _404_handler_factory(p.endpoint, p);

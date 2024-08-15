@@ -3,7 +3,7 @@
 
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
-
+#include "entity_manager.h"
 #include "session_interface.h"
 #include "request_handler_factory/request_handler_factory.h"
 #include <map>
@@ -36,6 +36,7 @@ class server
     tcp::acceptor acceptor_;
     std::vector<path> paths_;
     std::map<std::string, request_handler_factory*> routes;
+    entity_manager entity_manager_;
 };
 
 #endif

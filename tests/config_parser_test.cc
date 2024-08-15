@@ -125,8 +125,12 @@ TEST_F(NginxTestFixture, SimplePathParse)
   bool static_match = (paths[1].type == static_ && 
                        paths[1].endpoint == "/static" && 
                        paths[1].info_map["root"] == "./files");
+  
+  bool api_match = (paths[2].type == api_ && 
+                       paths[2].endpoint == "/api" && 
+                       paths[2].info_map["data_path"] == "./files");
 
-  bool match = (echo_match && static_match);
+  bool match = (echo_match && static_match && api_match);
   EXPECT_TRUE(match);
 }
 
