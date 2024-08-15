@@ -1,46 +1,24 @@
 #include <regex>
+#include <string>
+#include <string_view>
 
 #include "http/mime_types.h"
 #include "request_handler/static_handler.h"
 
 /**
- * Constructor for a generic static handler, containing no file information.
- */
-static_handler::static_handler()
-{
-  ec = reply::status_type::not_found;
-  extension = "";
-  uri = "";
-}
-
-/**
  * Generate a static handler with file information from specific request.
  */
-static_handler::static_handler(request request_, std::string root) : 
-  uri(request_.uri), method(request_.method), root_(root) {}
-
-/**
- * Setter method for modifying the HTTP request received.
- */
-void static_handler::set_request(request request_, std::string root)
-{
-  uri = request_.uri;
-  method = request_.method;
-  root_ = root;
-}
+static_handler::static_handler(std::string location, std::string root_file_path, std::string request_url) : 
+  location_(location), root_(root_file_path), request_url_(request_url) {}
 
 /**
  * Generate a static HTTP structured reply for serving a static file.
  */
-reply static_handler::get_reply()
+http::status static_handler::serve(const http::request<http::dynamic_body> req, http::response<http::dynamic_body>& res)
 {
-  // Regex expression for matching filename.
-  std::regex exp ("^(/[a-zA-Z_0-9]+)*/([a-zA-Z_0-9.]+)$");
-
-  std::smatch match;
-  std::regex_search(uri, match, exp);
-
-  std::string file_name = match.str(2);
+  // File name consists of characters in request after the endpoint specified.
+  std::string input = req.target().to_string();
+  std::string file_name = input.substr(location_.size(), std::string::npos);
 
   // Determine extension type from substring following final period.
   size_t ext_start = file_name.find_last_of(".");
@@ -55,18 +33,23 @@ reply static_handler::get_reply()
   boost::filesystem::path boost_path(full_path);
   if (!boost::filesystem::exists(boost_path) || !boost::filesystem::is_regular_file(full_path))
   {
-    ec = reply::status_type::not_found;
-    return reply_.stock_reply(ec);
+      res.result(http::status::not_found);
+      beast::ostream(res.body()) << utility.get_stock_reply(res.result_int());
+      res.content_length((res.body().size()));
+      res.set(http::field::content_type, "text/html");
+      return res.result();
   }
 
   // Determine if file exists at local path.
   std::ifstream file_(full_path.c_str(), std::ios::in | std::ios::binary);
   if (!file_)
   {
-    ec = reply::status_type::not_found;
-    return reply_.stock_reply(ec);
+      res.result(http::status::not_found);
+      beast::ostream(res.body()) << utility.get_stock_reply(res.result_int());
+      res.content_length((res.body().size()));
+      res.set(http::field::content_type, "text/html");
+      return res.result();
   }
-  ec = reply::status_type::ok;
   
   // Read from the file into the reply body
   char c;
@@ -77,12 +60,9 @@ reply static_handler::get_reply()
   }
   file_.close();
 
-  reply_.status = reply::ok;
-  reply_.headers.resize(2);
-  reply_.content = reply_body;
-  reply_.headers[0].name = "Content-Length";
-  reply_.headers[0].value = std::to_string(reply_.content.size());
-  reply_.headers[1].name = "Content-Type";
-  reply_.headers[1].value = extension_to_type(extension);
-  return reply_;
+  res.result(http::status::ok);
+  beast::ostream(res.body()) << reply_body;
+  res.content_length((res.body().size()));
+  res.set(http::field::content_type, extension_to_type(extension));
+  return res.result();
 }

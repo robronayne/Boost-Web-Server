@@ -5,41 +5,31 @@
 #include "request_handler/echo_handler.h"
 
 /**
- * Create generic echo handler for an unspecified request.
+ * Generate an echo handler with location.
  */
-echo_handler::echo_handler()
-{
-  request_body = "";
-  size = 0;
-}
+echo_handler::echo_handler(std::string location, std::string request_url) 
+  : location_(location), request_url_(request_url) {
 
-/**
- * Generate an echo handler with specified message from a request.
- */
-echo_handler::echo_handler(request request_, size_t byte_transferred) 
-  : request_body(request_.original_req), size(byte_transferred) {}
-
-/**
- * For the current handler, set the request body to the original request.
- */
-void echo_handler::set_request(request request_, size_t byte_transferred)
-{
-  request_body = request_.original_req;
-  size = byte_transferred;
 }
 
 /**
  * Construct an HTTP structured reply for the received echo request.
  */
-reply echo_handler::get_reply()
+http::status echo_handler::serve(const http::request<http::dynamic_body> req, http::response<http::dynamic_body>& res)
 {
-  reply_.status = reply::ok;
-  reply_.content = request_body;
-  reply_.headers.resize(2);
-  reply_.headers[0].name = "Content-Length";
-  reply_.headers[0].value = std::to_string(reply_.content.size());
-  reply_.headers[1].name = "Content-Type";
-  reply_.headers[1].value = "text/plain";
-  return reply_;
+  std::string input = req.target().to_string();
+  if (location_ != input)
+  {
+    res.result(http::status::not_found);
+    beast::ostream(res.body()) << utility.get_stock_reply(res.result_int());
+    res.content_length((res.body().size()));
+    res.set(http::field::content_type, "text/html");
+    return res.result();
+  }
+  res.result(http::status::ok);
+  beast::ostream(res.body()) << req;
+  res.content_length((res.body().size()));
+  res.set(http::field::content_type, "text/plain");
+  return res.result();
 }
 

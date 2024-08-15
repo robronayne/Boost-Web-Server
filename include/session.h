@@ -4,11 +4,16 @@
 #include <cstdlib>
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
+#include <map>
+#include <string>
 
-#include "http/request.h"
-#include "request_parser.h"
+#include "request_handler_factory/request_handler_factory.h"
 #include "session_interface.h"
 #include "request_handler/request_handler_interface.h"
+#include "request_handler_factory/echo_handler_factory.h"
+#include "request_handler_factory/_404_handler_factory.h"
+#include "request_handler_factory/static_handler_factory.h"
+
 
 using boost::asio::ip::tcp;
 
@@ -43,7 +48,13 @@ class session : public session_interface
     boost::asio::streambuf buffer_;
     
     bool set_paths(std::vector<path> paths);
-    path get_endpoint();
+
+    bool set_routes(std::map<std::string, request_handler_factory*> route);
+
+    // longest prefix matching for location and url.
+    std::string match(std::map<std::string, request_handler_factory*> routes, std::string url);
+    
+    bool set_request(http::request<http::dynamic_body> request);
 
   private:
     tcp::socket socket_;
@@ -52,9 +63,10 @@ class session : public session_interface
     std::vector<path> paths_;
     std::string client_ip;
     
-    request request_;
-    request_parser request_parser_;
+    http::request<http::dynamic_body> request_;
 
     std::string get_info();
+
+    std::map<std::string, request_handler_factory*> routes_;
 };
 #endif

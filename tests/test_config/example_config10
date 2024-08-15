@@ -1,15 +1,9 @@
-listen 8080;
+port 80; # port my server listens on
 
-static {
-  location /static1/ {
-    root /usr/bin;
-  }
-  location /static2/ {
-    root /foo/bar;
-  }
+location /echo EchoHandler { # no arguments
+
 }
 
-echo {
-  location /echo {
-  }
+location /static StaticHandler {
+  root ./files # supports relative paths
 }

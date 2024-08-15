@@ -5,7 +5,6 @@
 #include <iostream>
 #include <filesystem>
 
-#include "http/request.h"
 #include "boost/filesystem.hpp"
 #include "request_handler_interface.h"
 
@@ -25,19 +24,16 @@
 class static_handler : public request_handler_interface
 {
   public:
-    static_handler();
-    static_handler(request request_, std::string root_);
-
-    void set_request(request request_, std::string root_);
-    reply get_reply();
+    static_handler(std::string location, std::string root_file_path, std::string request_url);
+    http::status serve(const http::request<http::dynamic_body> req, http::response<http::dynamic_body>& res);
 
   private:
-    reply::status_type ec;
-    reply reply_;
-    std::string uri;
+    std::string location_;
+    std::string request_url_;
     std::string method;
     std::string extension;
     std::string root_;
+    util utility;
 };
 
 #endif

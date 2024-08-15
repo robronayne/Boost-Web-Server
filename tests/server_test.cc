@@ -1,5 +1,6 @@
 #include <iostream>
 #include <boost/asio.hpp>
+#include "boost/filesystem.hpp"
 
 #include "server.h"
 #include "session.h"
@@ -58,6 +59,98 @@ TEST_F(ServerFixture, ServerAccept)
     boost::system::error_code()));
 }
 
+// Test if create_handler_factory successfully create pointers (not nullptr)
+TEST_F(ServerFixture, createStaticFactorySuccessfully)
+{
+  session s(io_service);
+
+  server serv(s, io_service, port);
+
+  std::map<std::string, request_handler_factory*> routes;
+  // setup dummy path
+  path p;
+  p.type = endpoint_type::static_;
+  p.endpoint = "/static";
+  p.info_map["root"] = "test root";
+
+  // create routes map
+  routes = serv.create_handler_factory(p);
+
+  bool success = (routes[p.endpoint] != nullptr);
+
+  EXPECT_TRUE(success);
+
+}
+
+// Test if create_handler_factory successfully create pointers (not nullptr)
+TEST_F(ServerFixture, createEchoFactorySuccessfully)
+{
+  session s(io_service);
+
+  server serv(s, io_service, port);
+
+  std::map<std::string, request_handler_factory*> routes;
+  // setup dummy path
+  path p;
+  p.type = endpoint_type::echo;
+  p.endpoint = "/echo";
+  p.info_map["root"] = "test root";
+
+  // create routes map
+  routes = serv.create_handler_factory(p);
+
+  bool success = (routes[p.endpoint] != nullptr);
+
+  EXPECT_TRUE(success);
+
+}
+
+// Test if create_handler_factory successfully create pointers (not nullptr)
+TEST_F(ServerFixture, create404FactorySuccessfully)
+{
+  session s(io_service);
+
+  server serv(s, io_service, port);
+
+  std::map<std::string, request_handler_factory*> routes;
+  // setup dummy path
+  path p;
+  p.type = endpoint_type::not_found;
+  p.endpoint = "/";
+  p.info_map["root"] = " ";
+
+  // create routes map
+  routes = serv.create_handler_factory(p);
+
+  bool success = (routes[p.endpoint] != nullptr);
+
+  EXPECT_TRUE(success);
+
+}
+
+// Test if the createRoutes successfully reach the end
+TEST_F(ServerFixture, createRoutes)
+{
+  session s(io_service);
+
+  server serv(s, io_service, port);
+
+  // setup dummy path
+  path p;
+  p.type = endpoint_type::echo;
+  p.endpoint = "/echo";
+  p.info_map["root"] = " ";
+
+  // create path vector
+  std::vector<path> path_vec;
+  path_vec.push_back(p);
+  serv.set_paths(path_vec);
+
+  bool success = serv.create_routes();
+
+  EXPECT_TRUE(success);
+
+}
 /* 
  * Temporarily remove test until smart pointers are added
  *

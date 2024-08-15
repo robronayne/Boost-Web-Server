@@ -1,69 +1,84 @@
 #include <cstring>
 #include <iostream>
+#include <boost/asio/buffers_iterator.hpp>
 
 #include "gtest/gtest.h"
-#include "../src/http/reply.cc"
 #include "request_handler/error_handler.h"
 
-class errorHandlerFixture : public :: testing::Test
-{
-  protected:
-    error_handler handler;
-};
-
 // Test the error handler for a file not found status type.
-TEST_F(errorHandlerFixture, notFoundCode)
+TEST(errorHandlerTest, notFoundCode)
 {
+  // Sample request to test.
+  http::request<http::dynamic_body> request_;  
+
   // Get the return reply struct from the handler function call.
-  reply answer;
-  handler.set_error_code(reply::status_type::not_found);
-  answer = handler.get_reply();
+  http::response<http::dynamic_body> answer;
+  error_handler handler(http::status::not_found);
+  http::status status_ = handler.serve(request_, answer);
+
+  std::string body { boost::asio::buffers_begin(answer.body().data()),
+                     boost::asio::buffers_end(answer.body().data()) };
+
+  std::vector<std::pair<std::string, std::string>> headers;
+  for(auto const& field : answer)
+  {
+    std::pair<std::string, std::string> header;
+    header.first = std::string(field.name_string());
+    header.second = std::string(field.value());
+    headers.push_back(header);
+  }
+  
+  util utility;
+  std::string expected_body = utility.get_stock_reply(404);
 
   // Check reply struct correctness.
-  bool success = (answer.status == reply::status_type::not_found &&
-                  answer.content == stock_replies::to_string(reply::status_type::not_found) &&
-                  answer.headers[0].name == "Content-Length" &&
-                  answer.headers[0].value == std::to_string(answer.content.size()) && 
-                  answer.headers[1].name == "Content-Type" &&
-                  answer.headers[1].value == "text/html");
+  bool success = (answer.result() == http::status::not_found &&
+                  body == expected_body &&
+                  answer.has_content_length() &&
+                  headers.at(0).first == "Content-Length" &&
+                  headers.at(0).second == std::to_string(expected_body.size()) &&
+                  headers.at(1).first == "Content-Type" &&
+                  headers.at(1).second == "text/html" &&
+                  status_ == answer.result());
 
   EXPECT_TRUE(success);
 }
 
 // Test the error handler for a bad request status type, explicitly set.
-TEST_F(errorHandlerFixture, badRequestCode)
+TEST(errorHandlerTest, badRequestCode)
 {
+  // Sample request to test.
+  http::request<http::dynamic_body> request_;  
+
   // Get the return reply struct from the handler function call.
-  reply answer;
-  handler.set_error_code(reply::status_type::bad_request);
-  answer = handler.get_reply();
+  http::response<http::dynamic_body> answer;
+  error_handler handler(http::status::bad_request);
+  http::status status_ = handler.serve(request_, answer);
+
+  std::string body { boost::asio::buffers_begin(answer.body().data()),
+                     boost::asio::buffers_end(answer.body().data()) };
+
+  std::vector<std::pair<std::string, std::string>> headers;
+  for(auto const& field : answer)
+  {
+    std::pair<std::string, std::string> header;
+    header.first = std::string(field.name_string());
+    header.second = std::string(field.value());
+    headers.push_back(header);
+  }
+  
+  util utility;
+  std::string expected_body = utility.get_stock_reply(400);
 
   // Check reply struct correctness.
-  bool success = (answer.status == reply::status_type::bad_request &&
-                  answer.content == stock_replies::to_string(reply::status_type::bad_request) &&
-                  answer.headers[0].name == "Content-Length" &&
-                  answer.headers[0].value == std::to_string(answer.content.size()) && 
-                  answer.headers[1].name == "Content-Type" &&
-                  answer.headers[1].value == "text/html");
-  
-  EXPECT_TRUE(success);
-}
+  bool success = (answer.result() == http::status::bad_request &&
+                  body == expected_body &&
+                  answer.has_content_length() &&
+                  headers.at(0).first == "Content-Length" &&
+                  headers.at(0).second == std::to_string(expected_body.size()) &&
+                  headers.at(1).first == "Content-Type" &&
+                  headers.at(1).second == "text/html" &&
+                  status_ == answer.result());
 
-// Test the error handler for a bad request status type, set by default.
-TEST(errorHandlerTest, badRequest)
-{
-  // Get the return reply struct from the handler function call.
-  reply answer;
-  error_handler handler(reply::status_type::bad_request);
-  answer = handler.get_reply();
-
-  // Check reply struct correctness.
-  bool success = (answer.status == reply::status_type::bad_request &&
-                  answer.content == stock_replies::to_string(reply::status_type::bad_request) &&
-                  answer.headers[0].name == "Content-Length" &&
-                  answer.headers[0].value == std::to_string(answer.content.size()) && 
-                  answer.headers[1].name == "Content-Type" &&
-                  answer.headers[1].value == "text/html");
-  
   EXPECT_TRUE(success);
 }

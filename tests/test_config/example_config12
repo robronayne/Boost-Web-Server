@@ -1,0 +1,11 @@
+location /trailing// EchoHandler { # remove trailing slashes
+
+}
+
+location invalid EchoHandler { # test invalid url
+
+}
+
+location / StaticHandler { # check single slash url
+  root ./files
+}

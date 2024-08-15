@@ -5,6 +5,9 @@
 
 #include "server.h"
 #include "http/path.h"
+#include "request_handler_factory/echo_handler_factory.h"
+#include "request_handler_factory/static_handler_factory.h"
+#include "request_handler_factory/_404_handler_factory.h"
 
 /** 
  * Constructor for the server class.
@@ -34,6 +37,9 @@ bool server::start_accept()
   {
     return false;
   }
+  // create map routes. map location to factory pointer
+  create_routes();
+  new_session->set_routes(routes);
   new_session->set_paths(paths_);
   acceptor_.async_accept(new_session->socket(),
       boost::bind(&server::handle_accept, this, new_session,
@@ -61,4 +67,39 @@ bool server::handle_accept(session_interface* new_session,
 
   start_accept();
   return result;
+}
+
+/**
+ *  Create a request handler factory based on the input path.
+ *  Return a map<string, request_handler_factory*> object, and
+ *  key is location, value is the factory pointer
+ */
+std::map<std::string, request_handler_factory*> server::create_handler_factory(path p)
+{
+  switch(p.type)
+  {
+    case endpoint_type::static_:
+      routes[p.endpoint] = new static_handler_factory(p.endpoint, p);
+    break;
+    case endpoint_type::echo:
+      routes[p.endpoint] = new echo_handler_factory(p.endpoint, p);
+    break;
+    case endpoint_type::not_found:
+      routes[p.endpoint] = new _404_handler_factory(p.endpoint, p);
+    break;
+  }
+  return routes;
+}
+
+/**
+ *  Create a route map. It takes the address of map and change it
+ *  based on path_. Return true if successfully reach the end.
+ */
+bool server::create_routes()
+{
+  for (path p : paths_)
+  {
+    create_handler_factory(p);
+  }
+  return true;
 }

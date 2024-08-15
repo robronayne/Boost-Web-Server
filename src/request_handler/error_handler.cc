@@ -1,30 +1,18 @@
 #include "request_handler/error_handler.h"
 
 /**
- * Constructor for generic error; defaults to OK.
- */
-error_handler::error_handler()
-{
-  err_code = reply::status_type::ok;
-}
-
-/**
  * Generate an error handler with specified message for specific request.
  */
-error_handler::error_handler(reply::status_type ec) : err_code(ec) {}
-
-/**
- * Set the error code for the error handler object.
- */
-void error_handler::set_error_code(reply::status_type ec)
-{
-  err_code = ec;
-}
+error_handler::error_handler(http::status ec) : err_code(ec) {}
 
 /**
  * Construct an HTTP structured reply for the erroneous request.
  */
-reply error_handler::get_reply()
+http::status error_handler::serve(const http::request<http::dynamic_body> req, http::response<http::dynamic_body>& res)
 {
-  return reply_.stock_reply(err_code);
+  res.result(err_code);
+  beast::ostream(res.body()) << utility.get_stock_reply(res.result_int());
+  res.content_length((res.body().size()));
+  res.set(http::field::content_type, "text/html");
+  return err_code;
 }

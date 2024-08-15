@@ -1,20 +1,16 @@
-listen 80;
+port 80;
 
-static {
-  location /static1/ {
-    root static1;
-  }
-  
-  location /static2/ {
-    root static2;
-  }
-
-  location /static3/ {
-    root static3;
-  }
+location /static1/ StaticHandler {
+  root static1;
 }
 
-echo {
-  location /echo {
-  }
+location /static2/ StaticHandler {
+  root static2;
+}
+
+location /static3/ StaticHandler {
+  root static3;
+}
+
+location /echo EchoHandler {
 }

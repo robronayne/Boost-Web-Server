@@ -90,7 +90,7 @@ TEST_F(NginxTestFixture, BigPortNum)
   EXPECT_TRUE(match);
 }
 
-// Massive Config to test multiple branches
+// Massive config to test multiple branches
 TEST_F(NginxTestFixture, Branches) 
 {
   bool success = parser.Parse("test_config/example_config9", &out_config);
@@ -109,7 +109,7 @@ TEST_F(NginxTestFixture, ToString)
 {
   bool success = parser.Parse("test_config/example_config6", &out_config);
   std::string parsed_string(out_config.ToString().c_str());
-  std::string expected_string = "listen 80;\n";
+  std::string expected_string = "port 80;\n";
   bool match = (parsed_string == expected_string);
   EXPECT_TRUE(match);
 }
@@ -120,17 +120,13 @@ TEST_F(NginxTestFixture, SimplePathParse)
   parser.Parse("test_config/example_config10", &out_config);
   std::vector<path> paths = out_config.getPaths();
 
-  bool match1 = (paths[0].type == static_ && 
-                 paths[0].endpoint == "/static1/" && 
-                 paths[0].root == "/usr/bin");
-  bool match2 = (paths[1].type == static_ && 
-                 paths[1].endpoint == "/static2/" && 
-                 paths[1].root == "/foo/bar");
-  bool match3 = (paths[2].type == echo && 
-                 paths[2].endpoint == "/echo" &&
-                 paths[2].root == "");
+  bool echo_match = (paths[0].type == echo && 
+                     paths[0].endpoint == "/echo");
+  bool static_match = (paths[1].type == static_ && 
+                       paths[1].endpoint == "/static" && 
+                       paths[1].info_map["root"] == "./files");
 
-  bool match = (match1 && match2 && match3);
+  bool match = (echo_match && static_match);
   EXPECT_TRUE(match);
 }
 
@@ -139,4 +135,19 @@ TEST_F(NginxTestFixture, MissingSemicolon)
 {
   bool success = parser.Parse("test_config/example_config11", &out_config);
   EXPECT_FALSE(success);
+}
+
+// Test good URL with trailing slashes, and one URL with single slash,
+// as well as one bad URL.
+TEST_F(NginxTestFixture, GoodURL)
+{
+  parser.Parse("test_config/example_config12", &out_config);
+  std::vector<path> paths = out_config.getPaths();
+  
+  bool trailing_slash = (paths[0].endpoint == "/trailing");
+  bool invalid_url = (paths[1].endpoint == "ERROR");
+  bool single_slash = (paths[2].endpoint == "/");
+
+  bool match = (trailing_slash && single_slash && invalid_url);
+  EXPECT_TRUE(match);
 }

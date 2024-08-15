@@ -1,7 +1,6 @@
 #ifndef ERROR_HANDLER_H
 #define ERROR_HANDLER_H
 
-#include "http/reply.h"
 #include "request_handler_interface.h"
 
 /**
@@ -20,15 +19,12 @@
 class error_handler : public request_handler_interface
 {
   public:
-    error_handler();
-    error_handler(reply::status_type ec);
-
-    void set_error_code(reply::status_type ec);
-    reply get_reply();
+    error_handler(http::status ec);
+    http::status serve(const http::request<http::dynamic_body> req, http::response<http::dynamic_body>& res);
 
   private:
-    reply::status_type err_code;
-    reply reply_;
+    http::status err_code;
+    util utility;
 };
 
 #endif

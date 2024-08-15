@@ -5,12 +5,17 @@
 #include <boost/asio.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/beast/core/buffers_to_string.hpp>
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
+#include <boost/beast/version.hpp>
 
 #include "session.h"
 #include "http/path.h"
 #include "request_handler/echo_handler.h"
 #include "request_handler/error_handler.h"
 #include "request_handler/static_handler.h"
+
+namespace http = boost::beast::http;
 
 /**
  * Constructor for the session class.
@@ -34,6 +39,15 @@ bool session::set_paths(std::vector<path> paths)
   return true;
 }
 
+/**
+ * Setter for request.
+ */
+bool session::set_request(http::request<http::dynamic_body> request)
+{
+  request_ = request;
+  return true;
+}
+
 /* 
  * Start a session with the intended configuration. 
  * Will read from a socket until \r\n\r\n is entered.
@@ -53,12 +67,12 @@ bool session::start()
   }
   
   log_message_info("status: accepting incoming requests", "start session");
-  boost::asio::async_read_until(socket_,
-                                buffer_,
-                                "\r\n\r\n",
-                                boost::bind(&session::handle_read, this,
-                                boost::asio::placeholders::error,
-                                boost::asio::placeholders::bytes_transferred));
+  http::async_read(socket_,
+                   buffer_,
+                   request_,
+                   boost::bind(&session::handle_read, this,
+                   boost::asio::placeholders::error,
+                   boost::asio::placeholders::bytes_transferred));
   return true;
 }
 
@@ -69,55 +83,26 @@ bool session::start()
 std::string session::handle_read(const boost::system::error_code& error,
     size_t bytes_transferred)
 {
+  std::ostringstream ostring;
+  ostring << request_;
+  std::string request_string = ostring.str();
   if (!error)
   {
-    request_parser::result_type result;
-
-    do {
-      std::istreambuf_iterator<char> st{&buffer_}, end;
-      std::tie(result, std::ignore) = request_parser_.parse(
-        request_, st, end);
-    } while(result == request_parser::indeterminate);
-
+    
     // If valid request, check for valid endpoint.
-    request_handler_interface* handler;
-    if (result == request_parser::good)
-    {
-      log_message_info("good request", "request parser");
-      
-      // Print the request breakdown.
-      log_message_info(get_info(), "request parser result");
+    
+    log_message_info("good request", "request parser");
+    
+    // Print the request breakdown.
+    log_message_info(request_string, "request parser result");
 
-      path request_endpoint = get_endpoint();
-      
-      // Create echo handler if echo endpoint
-      if (request_endpoint.type == endpoint_type::echo)
-      {
-        // Use echo handler for an echo request.
-        handler = new echo_handler(request_, bytes_transferred);
-      }
-      // Create static handler if static endpoint
-      else if (request_endpoint.type == endpoint_type::static_)
-      {
-        // Use static handler for serving specified file instead.
-        handler = new static_handler(request_, request_endpoint.root);
-      }
-      // Create error handler if no valid endpoint is found
-      else
-      {
-        handler = new error_handler(reply::status_type::not_found);
-      }
-    }
-    // If invalid request, create error handler
-    else if (result == request_parser::bad)
-    {
-      // Use an error handler for a bad request.
-      log_message_info("bad request", "request parser");
-      log_message_info(request_.original_req, "request parser result");
-
-      handler = new error_handler(reply::status_type::bad_request);
-    }
-
+    // get the location string
+    std::string location = match(routes_, std::string(request_.target()));
+    // create factory from the location
+    request_handler_factory* factory = routes_[location];
+    // create handler
+    request_handler_interface* handler = factory->create(location, std::string(request_.target()));
+    
     // Write the output of the request handler to the socket.
     write_to_socket(handler);
 
@@ -125,9 +110,11 @@ std::string session::handle_read(const boost::system::error_code& error,
   }
   else
   {
+    log_message_info("bad request", "request parser");
+    log_message_info(request_string, "request parser result");
     delete this;
   }
-  return request_.original_req;
+  return request_string;
 }
 
 /**
@@ -143,7 +130,9 @@ void session::write_to_socket(request_handler_interface* handler)
   }
 
   log_message_info("wrote to socket", "request handler");
-  boost::asio::write(socket_, handler->get_reply().to_buffers());
+  http::response <http::dynamic_body> response_;
+  handler->serve(request_, response_);
+  http::write(socket_, response_);
   handle_write(boost::system::error_code());
 }
 
@@ -204,56 +193,34 @@ void session::log_message_error(std::string message, std::string log_type)
                            << message;
 }
 
-/**
- * Function to format request information nicely.
+/*
+ *  longest prefix match to find the location
  */
-std::string session::get_info()
+std::string session::match(std::map<std::string, request_handler_factory*> routes, std::string url)
 {
-  std::string request_info = "method: " + request_.method
-                           + "\nuri: " + request_.uri 
-                           + "\nversion: " + std::to_string(request_.http_version_major)
-                           + "." + std::to_string(request_.http_version_minor);
-  
-  // Add headers to the request info.
-  for (int i = 0; i < request_.headers.size(); i++) 
+  const char delim = '/';
+  // start with original url
+  size_t pos = url.length();
+  std::string string_to_match = url.substr(0, pos);
+
+  while (pos != std::string::npos) 
   {
-    request_info += "\nheader_" + std::to_string(i) + ": " 
-                 + "\n\tname: " + request_.headers.at(i).name
-                 + "\n\tvalue: " + request_.headers.at(i).value;
+    string_to_match = string_to_match.substr(0, pos);
+    if (routes.find(string_to_match) != routes.end())
+    {
+      return string_to_match;
+    }
+    // use reverse find to string from the end of string to the start of string
+    pos = string_to_match.rfind(delim);
   }
-  return request_info;
+  return "/"; 
 }
 
 /**
- * Function to extract endpoint type from current request.
+ *  Set the map routes_ to input route
  */
-path session::get_endpoint()
+bool session::set_routes(std::map<std::string, request_handler_factory*> route)
 {
-  path result;
-  result.type = endpoint_type::invalid;
-  std::regex e ("^((/[a-zA-Z_0-9]+)*/)([a-zA-Z_0-9.]+)$");
-
-  std::smatch match;
-  if (std::regex_search(request_.uri, match, e))
-  {
-    // Get partial endpoint from requested uri
-    std::string partial = match.str(1);
-    for (int i = 0; i < paths_.size(); i++)
-    {  
-      // If partial match, keep searching until end
-      if (partial == paths_.at(i).endpoint) 
-      {
-        result = paths_.at(i);
-      }
-      // If full match, return immediately
-      else if (request_.uri == paths_.at(i).endpoint)
-      {
-        return paths_.at(i);
-      }
-    }
-  }
-
-  // Return valid endpoint if found, otherwise invalid
-  log_message_info(result.endpoint, "endpoint retrieved");
-  return result;
+  routes_ = route;
+  return true;
 }

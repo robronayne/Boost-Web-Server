@@ -15,10 +15,10 @@ class NginxConfig;
  */
 class NginxConfigStatement 
 {
- public:
-  std::string ToString(int depth);
-  std::vector<std::string> tokens_;
-  std::unique_ptr<NginxConfig> child_block_;
+  public:
+    std::string ToString(int depth);
+    std::vector<std::string> tokens_;
+    std::unique_ptr<NginxConfig> child_block_;
 };
 
 /**
@@ -28,6 +28,7 @@ class NginxConfig
 {
   public:
     int getPortNum();
+    std::string formatURL(std::string url);
     std::string ToString(int depth = 0);
 
     std::vector<path> getPaths();

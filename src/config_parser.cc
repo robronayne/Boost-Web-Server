@@ -14,6 +14,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <utility>
 #include <fstream>
 #include <iostream>
 #include <boost/log/trivial.hpp>
@@ -43,7 +44,7 @@ int NginxConfig::getPortNum()
     // If the statement is not a child block.
     if (statement->child_block_.get() == nullptr)
     {
-      if (statement->tokens_.size() == 2 && statement->tokens_[0] == "listen")
+      if (statement->tokens_.size() == 2 && statement->tokens_[0] == "port")
       {
         ret = stoi(statement->tokens_[1]);
         
@@ -66,59 +67,125 @@ int NginxConfig::getPortNum()
 }
 
 /**
+ * Return the URL serving path without trailing slashes.
+ * Will return an "ERROR" if for some another reason the URL is
+ * improper. Improper URL's will be handled by the error handler. 
+ */
+std::string NginxConfig::formatURL(std::string url)
+{
+  // Check that the URL begins with a valid character.
+  if (url.front() == '/')
+  {
+    // Ensure that the length is at least two characters before 
+    // recursively truncating the trailing slashes.
+    if (url.length() > 1 && url.back() == '/')
+    {
+      // Recursivley format the URL until trailing spaces are removed.
+      return formatURL(url.substr(0, url.size()-1));
+    }
+    else 
+    {
+      // Return a single slash URL.
+      return url;
+    }
+  }
+  else
+  {
+    // ERROR for invalid URLs.
+    BOOST_LOG_TRIVIAL(error) << "Configuration error:\n"
+                             << url
+                             << " is not a valid endpoint.";
+    return "ERROR";
+  }
+}
+
+/**
  * Determine local path from configuration file.
  */
 std::vector<path> NginxConfig::getPaths()
 {
-  for (auto statement : statements_)
+  for (const std::shared_ptr<NginxConfigStatement> statement : statements_)
   {
-    // Locate statements containing "static" and examine their children.
-    if (statement->tokens_[0] == "static" &&
-        statement->child_block_.get() != nullptr)
+    // Find "locate" statements containing 3 tokens.
+    if (statement->tokens_[0] == "location")
     {
-      // Determine the endpoint location to serve on.
-      for (auto child_statement : statement->child_block_->statements_)
+      // If the statement is directed towards an EchoHandler
+      // with a child block.
+      if (statement->tokens_[2] == "EchoHandler" &&
+          statement->child_block_.get() != nullptr &&
+          statement->tokens_.size() == 3)
       {
-        if (child_statement->tokens_[0] == "location" && 
-            child_statement->tokens_.size() >= 2 && 
-            child_statement->child_block_.get() != nullptr)
+        path current_path;
+        current_path.type = echo;
+        current_path.endpoint = formatURL(statement->tokens_[1]);
+        paths.push_back(current_path);
+      }
+      // If the statement is directed towards an StaticHandler
+      // with a child block.
+      else if (statement->tokens_[2] == "StaticHandler" &&
+               statement->child_block_.get() != nullptr &&
+               statement->tokens_.size() == 3)
+      {
+        for (const std::shared_ptr<NginxConfigStatement> child_statement : statement->child_block_->statements_)
         {
-          // Determine the root file location.
-          for (auto location_statement : child_statement->child_block_->statements_)
+          // Locate "root" statements with corresponding path
+          if (child_statement->tokens_.size() == 2)
           {
-            if (location_statement->tokens_[0] == "root" && 
-                location_statement->tokens_.size() >= 2 && 
-                child_statement->child_block_.get() != nullptr)         
-            {
-              // Create a path for the static file location and its endpoint.
-              path current_path;
-              current_path.type = static_;
-              current_path.endpoint = child_statement->tokens_[1];
-              current_path.root = location_statement->tokens_[1];
-              paths.push_back(current_path);
-            }
-          }        
+            path current_path;
+            current_path.type = static_;
+            current_path.endpoint = formatURL(statement->tokens_[1]);
+            current_path.info_map[child_statement->tokens_[0]] = child_statement->tokens_[1];
+            paths.push_back(current_path);
+          }
         }
       }
-    // Locate statements containing "echo" and examine their children.
-    } else if (statement->tokens_[0] == "echo" &&
-               statement->child_block_.get() != nullptr)
-    {
-      // Determine the endpoint location to serve on.
-      for (auto child_statement : statement->child_block_->statements_)
+      /**
+       * This is catch-all else statement for invalid location statements. 
+       *
+       * - Look for any statments beginning with a "location" token.
+       * - Now determine if one of the following conditions holds:
+       *    1. The the number of tokens in the statement is not equal to 3
+       *    2. The third token is neither "EchoHandler" nor "StaticHandler"
+       *    3. The statement does not have a child block
+       *
+       * If any of these above three statements hold for a "location" statement,
+       * then we know that the specified configuration is invalid.
+       */
+      else
       {
-        if (child_statement->tokens_[0] == "location" && 
-            child_statement->tokens_.size() >= 2)
+        std::string print_statement = "";
+    
+        for (std::string current_token : statement->tokens_)
         {
-          // Create a path for containing the endpoint for the echo.
-          path current_path;
-          current_path.type = echo;
-          current_path.endpoint = child_statement->tokens_[1];
-          current_path.root = "";
-          paths.push_back(current_path);
+          print_statement += (current_token + " ");
         }
+
+    	// Log error for invalid path
+    	BOOST_LOG_TRIVIAL(error) << "Configuration error:\n"
+          			 << print_statement
+          			 << "is not a valid path.";
       }
     }
+  }
+
+  // Determine whether or not the base path has already
+  // been initialized.
+  bool base_present = false;
+  for (path current_path : paths)
+  {
+    if (current_path.endpoint == "/")
+    {
+      base_present = true;
+    }
+  }
+
+  // If it hasn't, create it and append it to paths.
+  if (base_present == false)
+  {
+    path base_path;
+    base_path.endpoint = "/";
+    base_path.type = not_found;
+    paths.push_back(base_path);
   }
 
   return paths;

@@ -1,15 +1,11 @@
-listen 8080;
+port 8080;
 
-static {
-  location /static1/ {
-    root ../tests/static_files/static1;
-  }
-  location /static2/ {
-    root ../tests/static_files/static2;
-  }
+location /static1/ StaticHandler {
+  root ../tests/static_files/static1;
+}
+location /static2/ StaticHandler {
+  root ../tests/static_files/static2;
 }
 
-echo {
-  location /echo {
-  }
+location /echo EchoHandler {
 }
