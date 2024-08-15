@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
+#include <boost/log/trivial.hpp>
 
 #include "server.h"
 
@@ -16,6 +17,15 @@ server::server(session_interface& new_s, boost::asio::io_service& io_service, sh
 }
 
 /**
+ * Setter for path vector
+ */
+bool server::set_paths(std::vector<path> paths)
+{
+  paths_ = paths;
+  return true;
+}
+
+/**
  * Create a new server and attempt to configure it.
  * Returns true if session was acquired successfully, false otherwise
  */
@@ -26,6 +36,7 @@ bool server::start_accept()
   {
     return false;
   }
+  new_session->set_paths(paths_);
   acceptor_.async_accept(new_session->socket(),
       boost::bind(&server::handle_accept, this, new_session,
       boost::asio::placeholders::error));

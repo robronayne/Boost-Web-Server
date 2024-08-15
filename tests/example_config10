@@ -2,10 +2,10 @@ listen 8080;
 
 static {
   location /static1/ {
-    root ../tests/static_files/static1;
+    root /usr/bin;
   }
   location /static2/ {
-    root ../tests/static_files/static2;
+    root /foo/bar;
   }
 }
 

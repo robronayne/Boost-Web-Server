@@ -8,6 +8,16 @@
 
 class NginxConfig;
 
+// A path struct will contain the endpoint type, i.e. "static", "echo", etc.
+// as well as the root for where to locate the file.
+enum endpoint_type { static_, echo, invalid };
+struct path 
+{
+  endpoint_type type = echo;
+  std::string endpoint = "";
+  std::string root = "";
+};
+
 /**
  * The parsed representation of a single config statement.
  */
@@ -21,10 +31,15 @@ class NginxConfigStatement {
  * The parsed representation of the entire config.
  */
 class NginxConfig {
- public:
-  std::string ToString(int depth = 0);
-  std::vector<std::shared_ptr<NginxConfigStatement>> statements_;
-  int getPortNum();
+  public:
+    std::string ToString(int depth = 0);
+    std::vector<std::shared_ptr<NginxConfigStatement>> statements_;
+    int getPortNum();
+    std::vector<path> getPaths();
+  private:
+    // Create a vector of path structs that are related
+    // to the configuration file.
+    std::vector<path> paths;
 };
 
 /**

@@ -22,6 +22,9 @@ TEST_F(ServerFixture, ServerStart)
 
   server serv(s, io_service, port);
 
+  std::vector<path> paths;
+  EXPECT_TRUE(serv.set_paths(paths));
+
   EXPECT_TRUE(serv.start_accept());
 }
 

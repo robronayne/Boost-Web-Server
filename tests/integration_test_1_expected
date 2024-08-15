@@ -1,6 +1,7 @@
 HTTP/1.1 200 OK
+Content-Length: 35
 Content-Type: text/plain
 
-GET / HTTP/1.1
+GET /echo HTTP/1.1
 Accept: */*
 

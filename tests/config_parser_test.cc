@@ -98,3 +98,22 @@ TEST_F(NginxTestFixture, ToString) {
   bool match = (parsed_string == expected_string);
   EXPECT_TRUE(match);
 }
+
+// Test for parsing of simple paths, including location and root.
+TEST_F(NginxTestFixture, SimplePathParse) {
+  parser.Parse("example_config10", &out_config);
+  std::vector<path> paths = out_config.getPaths();
+
+  bool match1 = (paths[0].type == static_ && 
+                 paths[0].endpoint == "/static1/" && 
+                 paths[0].root == "/usr/bin");
+  bool match2 = (paths[1].type == static_ && 
+                 paths[1].endpoint == "/static2/" && 
+                 paths[1].root == "/foo/bar");
+  bool match3 = (paths[2].type == echo && 
+                 paths[2].endpoint == "/echo" &&
+                 paths[2].root == "");
+
+  bool match = (match1 && match2 && match3);
+  EXPECT_TRUE(match);
+}
