@@ -4,23 +4,23 @@ steps:
   args:
   - '-c'
   - |
-    docker pull gcr.io/$PROJECT_ID/robronayne-config-parser:base || exit 0
+    docker pull gcr.io/$PROJECT_ID/ngineers:base || exit 0
 - name: 'gcr.io/cloud-builders/docker'
   args: [
     'build',
     '-f', 'docker/base.Dockerfile',
-    '-t', 'robronayne-config-parser:base',
-    '-t', 'gcr.io/$PROJECT_ID/robronayne-config-parser:base',
-    '--cache-from', 'gcr.io/$PROJECT_ID/robronayne-config-parser:base',
+    '-t', 'ngineers:base',
+    '-t', 'gcr.io/$PROJECT_ID/ngineers:base',
+    '--cache-from', 'gcr.io/$PROJECT_ID/ngineers:base',
     '.'
   ]
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['push', 'gcr.io/$PROJECT_ID/robronayne-config-parser:base']
+  args: ['push', 'gcr.io/$PROJECT_ID/ngineers:base']
 - name: 'gcr.io/cloud-builders/docker'
   args: [
     'build',
     '-f', 'docker/Dockerfile',
-    '-t', 'gcr.io/$PROJECT_ID/robronayne-config-parser:latest',
+    '-t', 'gcr.io/$PROJECT_ID/ngineers:latest',
     '.'
   ]
-images: ['gcr.io/$PROJECT_ID/robronayne-config-parser:base', 'gcr.io/$PROJECT_ID/robronayne-config-parser:latest']
+images: ['gcr.io/$PROJECT_ID/ngineers:base', 'gcr.io/$PROJECT_ID/ngineers:latest']

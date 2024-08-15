@@ -25,6 +25,39 @@ std::string NginxConfig::ToString(int depth) {
   return serialized_config;
 }
 
+/**
+ * Gets the port number from a configuration file
+*/
+
+int NginxConfig::getPortNum()
+{
+  int ret;
+  for (auto statement : statements_)
+  {
+    // if the statement is not a child block
+    if (statement->child_block_.get() == nullptr)
+    {
+      if (statement->tokens_.size() == 2 && statement->tokens_[0] == "listen")
+      {
+        ret = stoi(statement->tokens_[1]);
+        // acceptable range for port numbers is 0 <= ret <= 65535 (0xffff) 
+        if (ret >= 0 && ret <= 0xffff)
+          return ret;
+        else
+          return -1;
+      }
+    }
+    // if the statement is a child block (examine it recursively)
+    else
+    {
+      ret = statement -> child_block_ -> getPortNum();
+      if (ret != -1)
+        return ret;
+    }
+  }
+  return -1;
+}
+
 std::string NginxConfigStatement::ToString(int depth) {
   std::string serialized_statement;
   for (int i = 0; i < depth; ++i) {
