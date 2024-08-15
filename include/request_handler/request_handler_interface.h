@@ -6,6 +6,7 @@
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include "util.h"
+#include "user_profile.h"
 
 namespace beast = boost::beast;
 namespace http = beast::http;
@@ -21,6 +22,7 @@ class request_handler_interface
 {
   public:
     virtual http::status serve(const http::request<http::dynamic_body> req, http::response<http::dynamic_body>& res) = 0;
+    virtual user_profile get_profile() {return user_profile{0, "", "", false};};
     virtual ~request_handler_interface() {}
 };
 

@@ -31,4 +31,4 @@ steps:
     '.'
   ]
 images: ['gcr.io/$PROJECT_ID/ngineers:base', 'gcr.io/$PROJECT_ID/ngineers:latest', 'gcr.io/$PROJECT_ID/ngineers:coverage']
-timeout: 900s
+timeout: 1200s

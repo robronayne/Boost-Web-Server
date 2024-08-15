@@ -54,12 +54,14 @@ bool prepare_id(ent_id& id, std::vector<std::string>& fields)
   The location (e.g. "api") and the entity type (e.g. "Shoes")
   And the id
   */
-  if (fields.size() < 2) {
+  if (fields.size() < 2) 
+  {
     return false;
   }
 
   // try to convert the last field into an integer
-  try {
+  try 
+  {
     id.id_ = std::stoi(fields.back(), nullptr);
   }
 
@@ -67,7 +69,8 @@ bool prepare_id(ent_id& id, std::vector<std::string>& fields)
   an exception will be thrown if the conversion is unsuccessful
   we fail in that case
   */
-  catch (std::exception& e) {
+  catch (std::exception& e)
+  {
     return false;
   }
 
@@ -80,11 +83,12 @@ bool prepare_id(ent_id& id, std::vector<std::string>& fields)
   return true;
 }
 
-api_handler::api_handler(std::string location, std::string root_file_path, std::string request_url)
+api_handler::api_handler(std::string location, std::string root_file_path, std::string request_url, user_profile profile)
  : location_(location),
    root_(root_file_path),
    request_url_(request_url),
-   e_manager(root_file_path) {}
+   e_manager(root_file_path),
+   profile_(profile) {}
 
 http::status api_handler::serve(const http::request<http::dynamic_body> req, http::response<http::dynamic_body>& res)
 {
@@ -92,13 +96,16 @@ http::status api_handler::serve(const http::request<http::dynamic_body> req, htt
   std::string req_target = req.target().to_string();
   std::vector<std::string> uri_fields;
   split_request(req_target, uri_fields);
+  bool logged_in = profile_.login_status;
 
-  switch(req_method) {
+  switch(req_method)
+  {
 
     case http::verb::get:
     {
       // if it's a request for a list of ID's return that
-      if (e_manager.type_exists(req_target)) {
+      if (e_manager.type_exists(req_target))
+      {
         std::string reply_body = e_manager.get_ids_by_type(req_target);
         beast::ostream(res.body()) << reply_body;
         res.result(http::status::ok);
@@ -112,14 +119,16 @@ http::status api_handler::serve(const http::request<http::dynamic_body> req, htt
 
       // checking request validity  
       ent_id id;
-      if (!prepare_id(id, uri_fields)) {
+      if (!prepare_id(id, uri_fields)) 
+      {
         fail(res, http::status::bad_request);
         break;
       }
 
       // get entity data and populate response
       const entity* ent = e_manager.get(id);
-      if (ent != nullptr) {
+      if (ent != nullptr)
+      {
         res.result(http::status::ok);
         std::string reply_body = ent->get_data();
         beast::ostream(res.body()) << reply_body;
@@ -127,9 +136,8 @@ http::status api_handler::serve(const http::request<http::dynamic_body> req, htt
         res.set(http::field::content_type, "application/json");
         res.keep_alive(req.keep_alive());
       }
-      else {
+      else
         fail(res, http::status::bad_request);
-      }
 
     break;
 
@@ -137,9 +145,17 @@ http::status api_handler::serve(const http::request<http::dynamic_body> req, htt
 
     case http::verb::put:
     {
+      // only logged in users can perform non-read requests
+      if (!logged_in)
+      {
+        fail(res, http::status::unauthorized);
+        break;
+      }
+
       // check request validity
       ent_id id;
-      if (!prepare_id(id, uri_fields)) {
+      if (!prepare_id(id, uri_fields))
+      {
         fail(res, http::status::bad_request);
         break;
       }
@@ -151,7 +167,8 @@ http::status api_handler::serve(const http::request<http::dynamic_body> req, htt
       bool updated = e_manager.update(id, new_data);
       mu.unlock();
 
-      if (updated) {
+      if (updated) 
+      {
         res.result(http::status::ok);
         std::string reply_body = req_target + " updated successfully.";
         beast::ostream(res.body()) << reply_body;
@@ -159,12 +176,14 @@ http::status api_handler::serve(const http::request<http::dynamic_body> req, htt
         res.set(http::field::content_type, "text/plain");
         res.keep_alive(req.keep_alive());
       }
-      else {
+      else 
+      {
         entity new_entity;
 
         size_t type_start = req_target.find("/", 1);
         std::string type_;
-        if (type_start == std::string::npos) {
+        if (type_start == std::string::npos)
+        {
           fail(res, http::status::bad_request);
           break;
         }
@@ -178,7 +197,8 @@ http::status api_handler::serve(const http::request<http::dynamic_body> req, htt
         bool inserted = e_manager.insert_with_id(new_entity);
         mu.unlock();
 
-        if (inserted) {
+        if (inserted)
+        {
           res.result(http::status::ok);
           std::string reply_body = "{\"id\": " + std::to_string(new_entity.id) + "}";
           beast::ostream(res.body()) << reply_body;
@@ -194,9 +214,17 @@ http::status api_handler::serve(const http::request<http::dynamic_body> req, htt
 
     case http::verb::delete_:
     {
+      // only logged in users can perform non-read requests
+      if (!logged_in)
+      {
+        fail(res, http::status::unauthorized);
+        break;
+      }
+
       // check request validity
       ent_id id;
-      if (!prepare_id(id, uri_fields)) {
+      if (!prepare_id(id, uri_fields)) 
+      {
         fail(res, http::status::bad_request);
         break;
       }
@@ -206,7 +234,8 @@ http::status api_handler::serve(const http::request<http::dynamic_body> req, htt
       bool removed = e_manager.remove(id);
       mu.unlock();
 
-      if (removed) {
+      if (removed) 
+      {
         res.result(http::status::ok);
         std::string reply_body = req_target + " deleted successfully.";
         beast::ostream(res.body()) << reply_body;
@@ -214,15 +243,21 @@ http::status api_handler::serve(const http::request<http::dynamic_body> req, htt
         res.set(http::field::content_type, "text/plain");
         res.keep_alive(req.keep_alive());
       }
-      else {
+      else
         fail(res, http::status::bad_request);
-      }
     
     break;
     }
 
     case http::verb::post:
     {
+      // only logged in users can perform non-read requests
+      if (!logged_in)
+      {
+        fail(res, http::status::unauthorized);
+        break;
+      }
+
       // object for the new entity to be inserted
       entity new_entity;
 
@@ -233,7 +268,8 @@ http::status api_handler::serve(const http::request<http::dynamic_body> req, htt
       */
       size_t type_start = req_target.find("/", 1);
       std::string type_;
-      if (type_start == std::string::npos) {
+      if (type_start == std::string::npos) 
+      {
         fail(res, http::status::bad_request);
         break;
       }
@@ -248,7 +284,8 @@ http::status api_handler::serve(const http::request<http::dynamic_body> req, htt
       bool inserted = e_manager.insert(new_entity);
       mu.unlock();
       
-      if (inserted) {
+      if (inserted) 
+      {
         res.result(http::status::ok);
         std::string reply_body = "{\"id\": " + std::to_string(new_entity.id) + "}";
         beast::ostream(res.body()) << reply_body;
@@ -256,9 +293,8 @@ http::status api_handler::serve(const http::request<http::dynamic_body> req, htt
         res.set(http::field::content_type, "application/json");
         res.keep_alive(req.keep_alive());
       }
-      else {
+      else
         fail(res, http::status::bad_request);
-      }
     break;
     }
     default:
@@ -266,12 +302,12 @@ http::status api_handler::serve(const http::request<http::dynamic_body> req, htt
     break;
   }
 
-  log_message_info(res.result(), req_target);
+  log_message_info(res.result(), req_target, req_method);
 
   return res.result();
 }
 
-void api_handler::log_message_info(http::status code, std::string req_path)
+void api_handler::log_message_info(http::status code, std::string req_path, http::verb action)
 {
   int res_code;
   switch(code)
@@ -282,7 +318,38 @@ void api_handler::log_message_info(http::status code, std::string req_path)
     case http::status::bad_request :
       res_code = 400;
       break;
+    case http::status::unauthorized :
+      res_code = 401;
+      break;
   }
+
+  std::string method;
+  switch(action)
+  {
+    case http::verb::get:
+      method = "get ";
+      break;
+    case http::verb::put:
+      method = "put ";
+      break;
+    case http::verb::delete_:
+      method = "delete ";
+      break;
+    case http::verb::post:
+      method = "post ";
+      break;
+  }
+
+  std::string user;
+  if (profile_.login_status)
+  {
+    user = std::to_string(profile_.user_id) + " ";
+  }
+  else
+  {
+    user = "unauthorized ";
+  }
+
   BOOST_LOG_TRIVIAL(info) << "[ResponseMetrics] "
                           << "response_code: "
                           << res_code
@@ -290,5 +357,9 @@ void api_handler::log_message_info(http::status code, std::string req_path)
                           << "request_path: "
                           << req_path
                           << " "
+                          << "request_type: "
+                          << method
+                          << "user_id: "
+                          << user
                           << "matched_handler: api handler";
 }

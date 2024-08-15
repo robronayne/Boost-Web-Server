@@ -7,7 +7,7 @@ static_handler_factory::static_handler_factory(std::string location, path root_f
 
 }
 
-request_handler_interface* static_handler_factory::create(std::string location, std::string request_url)
+request_handler_interface* static_handler_factory::create(std::string location, std::string request_url, user_profile profile)
 {
   return new static_handler(location, root_file_path_.info_map["root"], request_url);
 }

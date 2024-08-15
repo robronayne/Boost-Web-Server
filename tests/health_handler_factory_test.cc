@@ -10,8 +10,12 @@ TEST(healthHandlerFactoryTest, successfullyCreateHealthHandler)
   // create factory pointer
   path p;
   health_handler_factory* factory = new health_handler_factory("/health", p);
+
+  // test user profile
+  user_profile profile;
+
   // create handler pointer
-  request_handler_interface* handler = factory->create("/health", "test url");
+  request_handler_interface* handler = factory->create("/health", "test url", profile);
 
   // check if handler is nullptr
   bool success = (handler != nullptr);
@@ -25,8 +29,11 @@ TEST(healthHandlerFactoryTest, createUsableHealthHandler)
   // create factory pointer
   path p;
   health_handler_factory* factory = new health_handler_factory("/health", p);
+  // test user profile
+  user_profile profile;
+
   // create handler pointer
-  request_handler_interface* handler = factory->create("/health", "test url");
+  request_handler_interface* handler = factory->create("/health", "test url", profile);
 
   // Sample request to test.
   http::request<http::dynamic_body> request_;

@@ -11,9 +11,13 @@ TEST(staticHandlerFactoryTest, successfullyCreateStaticHandler)
   // create factory pointer
   path p;
   p.info_map["root"] = "test path";
+
+  // test user profile
+  user_profile profile;
+
   static_handler_factory* factory = new static_handler_factory("/static1", p);
   // create handler pointer
-  request_handler_interface* handler = factory->create("/static1", "test url");
+  request_handler_interface* handler = factory->create("/static1", "test url", profile);
 
   // check if handler is nullptr
   bool success = (handler != nullptr);
@@ -27,9 +31,13 @@ TEST(staticHandlerFactoryTest, createUsableStaticHandler)
   // create factory pointer
   path p;
   p.info_map["root"] = "static_files/static1";
+
+  // test user profile
+  user_profile profile;
+
   static_handler_factory* factory = new static_handler_factory("/static1", p);
   // create handler pointer
-  request_handler_interface* handler = factory->create("/static1", "/static1/example.html");
+  request_handler_interface* handler = factory->create("/static1", "/static1/example.html", profile);
 
   std::string root = "static_files/static1";
   std::string base_uri = "/static1/";

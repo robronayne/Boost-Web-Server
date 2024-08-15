@@ -168,7 +168,8 @@ std::vector<path> NginxConfig::getPaths()
         current_path.endpoint = formatURL(statement->tokens_[1]);
         paths.push_back(current_path);
       }
-
+      // If the statement is directed towards a SleepHandler
+      // with a child block.
       else if (statement->tokens_[2] == "SleepHandler" &&
           statement->child_block_.get() != nullptr &&
           statement->tokens_.size() == 3)
@@ -177,6 +178,54 @@ std::vector<path> NginxConfig::getPaths()
         current_path.type = sleep_;
         current_path.endpoint = formatURL(statement->tokens_[1]);
         paths.push_back(current_path);
+      }
+      // If the statement is directed towards a ProfileHandler
+      // with a child block.
+      else if (statement->tokens_[2] == "ProfileHandler" &&
+          statement->child_block_.get() != nullptr &&
+          statement->tokens_.size() == 3)
+      {
+        path current_path;
+        current_path.type = profile;
+        current_path.endpoint = formatURL(statement->tokens_[1]);
+        paths.push_back(current_path);
+      }
+      // If the statement is directed towards an Authentication Handler
+      // with a child block.
+      else if (statement->tokens_[2] == "AuthenticationHandler" &&
+          statement->child_block_.get() != nullptr &&
+          statement->tokens_.size() == 3)
+      {
+        path current_path;
+        current_path.type = auth;
+        for (const std::shared_ptr<NginxConfigStatement> child_statement : statement->child_block_->statements_)
+        {
+          // Locate login, logout, signup statements with corresponding sub-endpoints
+          if (child_statement->tokens_.size() == 2)
+          {
+            current_path.endpoint = formatURL(statement->tokens_[1]);
+            current_path.info_map[child_statement->tokens_[0]] = child_statement->tokens_[1];
+          }
+        }
+        paths.push_back(current_path);
+      }
+      // Finally, determine if the statement is directed towards a ApiConsoleHandler
+      // with a child block.
+      else if (statement->tokens_[2] == "ApiConsoleHandler" &&
+               statement->child_block_.get() != nullptr &&
+               statement->tokens_.size() == 3){
+          for (const std::shared_ptr<NginxConfigStatement> child_statement : statement->child_block_->statements_)
+        {
+          // Locate "data_path" statements with corresponding path
+          if (child_statement->tokens_.size() == 2)
+          {
+            path current_path;
+            current_path.type = console;
+            current_path.endpoint = formatURL(statement->tokens_[1]);
+            current_path.info_map[child_statement->tokens_[0]] = child_statement->tokens_[1];
+            paths.push_back(current_path);
+          }
+        }
       }
       /**
        * This is catch-all else statement for invalid location statements.

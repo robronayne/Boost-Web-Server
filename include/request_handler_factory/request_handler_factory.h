@@ -3,6 +3,7 @@
 
 #include <string>
 #include "request_handler/request_handler_interface.h"
+#include "user_profile.h"
 
 /*
  *  Parent class for request handler factory object. Request handler factories
@@ -12,7 +13,7 @@
 class request_handler_factory
 {
   public:
-    virtual request_handler_interface* create(std::string location, std::string request_url) = 0;
+    virtual request_handler_interface* create(std::string location, std::string request_url, user_profile profile) = 0;
     virtual ~request_handler_factory() {}
 };
 

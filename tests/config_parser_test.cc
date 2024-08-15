@@ -115,7 +115,7 @@ TEST_F(NginxTestFixture, ToString)
 }
 
 // Test for parsing of simple paths, including location and root.
-TEST_F(NginxTestFixture, SimplePathParse) 
+TEST_F(NginxTestFixture, SimplePathParse)
 {
   parser.Parse("test_config/example_config10", &out_config);
   std::vector<path> paths = out_config.getPaths();
@@ -137,7 +137,21 @@ TEST_F(NginxTestFixture, SimplePathParse)
   bool sleep_match = (paths[4].type == sleep_ &&
                       paths[4].endpoint == "/sleep");
 
-  bool match = (echo_match && static_match && api_match && health_match && sleep_match);
+  bool profile_match = (paths[5].type == profile &&
+                        paths[5].endpoint == "/profile");
+
+  bool auth_match = (paths[6].type == auth &&
+                     paths[6].endpoint == "/auth" &&
+                     paths[6].info_map["root"] == "credentials" &&
+                     paths[6].info_map["login"] == "/login" &&
+                     paths[6].info_map["logout"] == "/logout" &&
+                     paths[6].info_map["signup"] == "/signup");
+  bool console_match = (paths[7].type == console &&
+                        paths[7].endpoint == "/console" &&
+                        paths[7].info_map["root"] == "credentials");
+
+  bool match = (echo_match && static_match && api_match && health_match && sleep_match &&
+                profile_match && auth_match && console_match);
   EXPECT_TRUE(match);
 }
 

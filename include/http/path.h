@@ -8,7 +8,12 @@
  * A path struct will contain the endpoint type, i.e. "static", "echo", etc.
  * as well as the root for where to locate the file.
  */
-enum endpoint_type { static_, echo, api_, health, sleep_, invalid, not_found };
+enum endpoint_type { static_, echo, 
+                     api_, health, 
+                     sleep_, profile,
+                     auth, login, logout,
+                     signup, invalid, 
+                     not_found, console};
 struct path
 {
   endpoint_type type;

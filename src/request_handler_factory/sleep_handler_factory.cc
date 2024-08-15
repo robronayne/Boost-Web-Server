@@ -7,7 +7,7 @@ sleep_handler_factory::sleep_handler_factory(std::string location, path root_fil
 
 }
 
-request_handler_interface* sleep_handler_factory::create(std::string location, std::string request_url)
+request_handler_interface* sleep_handler_factory::create(std::string location, std::string request_url, user_profile profile)
 {
   return new sleep_handler(location, request_url);
 }

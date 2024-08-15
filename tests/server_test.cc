@@ -106,6 +106,144 @@ TEST_F(ServerFixture, createEchoFactorySuccessfully)
 }
 
 // Test if create_handler_factory successfully create pointers (not nullptr)
+TEST_F(ServerFixture, createApiFactorySuccessfully)
+{
+  session s(io_service);
+
+  server serv(s, io_service, port);
+
+  std::map<std::string, request_handler_factory*> routes;
+  // setup dummy path
+  path p;
+  p.type = endpoint_type::api_;
+  p.endpoint = "/api";
+  p.info_map["root"] = "test root";
+
+  // create routes map
+  routes = serv.create_handler_factory(p);
+
+  bool success = (routes[p.endpoint] != nullptr);
+
+  EXPECT_TRUE(success);
+
+}
+
+// Test if create_handler_factory successfully create pointers (not nullptr)
+TEST_F(ServerFixture, createHealthFactorySuccessfully)
+{
+  session s(io_service);
+
+  server serv(s, io_service, port);
+
+  std::map<std::string, request_handler_factory*> routes;
+  // setup dummy path
+  path p;
+  p.type = endpoint_type::health;
+  p.endpoint = "/health";
+  p.info_map["root"] = "test root";
+
+  // create routes map
+  routes = serv.create_handler_factory(p);
+
+  bool success = (routes[p.endpoint] != nullptr);
+
+  EXPECT_TRUE(success);
+
+}
+
+// Test if create_handler_factory successfully create pointers (not nullptr)
+TEST_F(ServerFixture, createSleepFactorySuccessfully)
+{
+  session s(io_service);
+
+  server serv(s, io_service, port);
+
+  std::map<std::string, request_handler_factory*> routes;
+  // setup dummy path
+  path p;
+  p.type = endpoint_type::sleep_;
+  p.endpoint = "/sleep";
+  p.info_map["root"] = "test root";
+
+  // create routes map
+  routes = serv.create_handler_factory(p);
+
+  bool success = (routes[p.endpoint] != nullptr);
+
+  EXPECT_TRUE(success);
+
+}
+
+// Test if create_handler_factory successfully create pointers (not nullptr)
+TEST_F(ServerFixture, createAuthenticationFactorySuccessfully)
+{
+  session s(io_service);
+
+  server serv(s, io_service, port);
+
+  std::map<std::string, request_handler_factory*> routes;
+  // setup dummy path
+  path p;
+  p.type = endpoint_type::auth;
+  p.endpoint = "/auth";
+  p.info_map["root"] = "test root";
+
+  // create routes map
+  routes = serv.create_handler_factory(p);
+
+  bool success = (routes[p.endpoint] != nullptr);
+
+  EXPECT_TRUE(success);
+
+}
+
+// Test if create_handler_factory successfully create pointers (not nullptr)
+TEST_F(ServerFixture, createProfileFactorySuccessfully)
+{
+  session s(io_service);
+
+  server serv(s, io_service, port);
+
+  std::map<std::string, request_handler_factory*> routes;
+  // setup dummy path
+  path p;
+  p.type = endpoint_type::profile;
+  p.endpoint = "/profile";
+  p.info_map["root"] = "test root";
+
+  // create routes map
+  routes = serv.create_handler_factory(p);
+
+  bool success = (routes[p.endpoint] != nullptr);
+
+  EXPECT_TRUE(success);
+
+}
+
+// Test if create_handler_factory successfully create pointers (not nullptr)
+TEST_F(ServerFixture, createApiConsoleFactorySuccessfully)
+{
+  session s(io_service);
+
+  server serv(s, io_service, port);
+
+  std::map<std::string, request_handler_factory*> routes;
+  // setup dummy path
+  path p;
+  p.type = endpoint_type::console;
+  p.endpoint = "/console";
+  p.info_map["root"] = "test root";
+
+  // create routes map
+  routes = serv.create_handler_factory(p);
+
+  bool success = (routes[p.endpoint] != nullptr);
+
+  EXPECT_TRUE(success);
+
+}
+
+// Test if create_handler_factory successfully create pointers (not nullptr)
 TEST_F(ServerFixture, create404FactorySuccessfully)
 {
   session s(io_service);

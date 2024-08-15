@@ -10,7 +10,9 @@
 #include <boost/beast/version.hpp>
 
 #include "session.h"
+#include "user_profile.h"
 #include "http/path.h"
+#include "profile_manager.h"
 #include "request_handler/error_handler.h"
 
 namespace http = boost::beast::http;
@@ -94,12 +96,16 @@ std::string session::handle_read(const boost::system::error_code& error,
     // Print the request breakdown.
     log_message_info(request_string, "request parser result");
 
+    // Update user login status
+    update_user(std::string(request_[http::field::cookie]), profile);
+
     // get the location string
     std::string location = match(routes_, std::string(request_.target()));
     // create factory from the location
     request_handler_factory* factory = routes_[location];
+
     // create handler
-    request_handler_interface* handler = factory->create(location, std::string(request_.target()));
+    request_handler_interface* handler = factory->create(location, std::string(request_.target()), profile);
     
     // Write the output of the request handler to the socket.
     write_to_socket(handler);
@@ -110,6 +116,9 @@ std::string session::handle_read(const boost::system::error_code& error,
   {
     log_message_info("bad request", "request parser");
     log_message_info(request_string, "request parser result");
+
+    // Forces a log out if the request is bad
+    this->logOut();
 
     // Error handler
     request_handler_interface* handler = new error_handler(http::status::bad_request, request_string);
@@ -148,12 +157,27 @@ bool session::handle_write(const boost::system::error_code& error)
 {
   if (!error)
   {
-    // Close connection after request to ensure http requests are sent properly.
-    boost::system::error_code ignored_ec;
-    socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ignored_ec);
+    /**if (logged_in)
+    {
+      // Allows persistence by looping back if the user is logged in.
+      log_message_info("status: accepting incoming requests", "continue session");
+      http::async_read(socket_,
+                       buffer_,
+                       request_,
+                       boost::bind(&session::handle_read, this,
+                       boost::asio::placeholders::error,
+                       boost::asio::placeholders::bytes_transferred));
+      return true;
+    }
+    else**/
+    {
+      // Close connection after request to ensure http requests are sent properly.
+      boost::system::error_code ignored_ec;
+      socket_.shutdown(boost::asio::ip::tcp::socket::shutdown_both, ignored_ec);
 
-    log_message_info("connection closed successfully", "request received");
-    return true;
+      log_message_info("connection closed successfully", "request received");
+      return true;
+    }
   }
   else
   {
@@ -227,4 +251,49 @@ bool session::set_routes(std::map<std::string, request_handler_factory*> route)
 {
   routes_ = route;
   return true;
+}
+
+/**
+ *  Set current user information based off of cookies
+ */
+bool session::update_user(std::string cookie_string, user_profile& user)
+{
+  // put cookie field in correct form to satisfy param_list grammar
+  std::string cookies = ";" + cookie_string;
+  for(auto param : http::param_list(cookies))
+  {
+    // find our cookie
+    if (param.first == "ngineers")
+    {
+      std::vector<std::string> info;
+      std::string data = std::string(param.second);
+
+      // extract user info from cookie
+      int begin = 0;
+      int end = data.find("|", begin);
+      while (end != std::string::npos) {
+          info.push_back(data.substr(begin, end - begin));
+          begin = end+1;
+          end = data.find("|", begin);
+      }
+      if (begin < data.size())
+      {
+        info.push_back(data.substr(begin, data.size()));
+      }
+
+      if (info.size() != 3)
+      {
+        return false;
+      }
+
+      // populate user struct
+      user.user_id = std::stoi(info.at(0));
+      user.username = info.at(1);
+      user.email = info.at(2);
+      user.login_status = true;
+
+      return true;
+    }
+  }
+  return false;
 }

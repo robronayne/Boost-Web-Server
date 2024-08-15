@@ -15,7 +15,11 @@ TEST(apiHandlerFactoryTest, successfullyCreateAPIHandler)
   p.info_map["data_path"] = "../database";
 
   api_handler_factory* factory = new api_handler_factory(location, p);
-  request_handler_interface* handler = factory->create(location, "test url");
+
+  // test user profile
+  user_profile profile;
+
+  request_handler_interface* handler = factory->create(location, "test url", profile);
 
   bool success = (handler != nullptr);
 

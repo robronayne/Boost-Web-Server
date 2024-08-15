@@ -17,12 +17,12 @@
 class api_handler : public request_handler_interface {
 
   public:
-    api_handler(std::string location, std::string root_file_path, std::string request_url);
+    api_handler(std::string location, std::string root_file_path, std::string request_url, user_profile profile);
     http::status serve(const http::request<http::dynamic_body> req, http::response<http::dynamic_body>& res);
     void fail(http::response<http::dynamic_body>& res, http::status fail_type);
 
   private:
-    void log_message_info(http::status code, std::string req_path);
+    void log_message_info(http::status code, std::string req_path, http::verb action);
     
     std::string location_;
     std::string request_url_;
@@ -31,6 +31,7 @@ class api_handler : public request_handler_interface {
     util utility;
     entity_manager e_manager;
     boost::mutex mu;
+    user_profile profile_;
 };
 
 #endif

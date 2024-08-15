@@ -11,8 +11,12 @@ TEST(_404HandlerFactoryTest, successfullyCreate404Handler)
   path p;
   p.info_map["root"] = " ";
   _404_handler_factory* factory = new _404_handler_factory("/", p);
+
+  // test user profile
+  user_profile profile;
+
   // create handler pointer
-  request_handler_interface* handler = factory->create("/", " ");
+  request_handler_interface* handler = factory->create("/", " ", profile);
 
   // check if handler is nullptr
   bool success = (handler != nullptr);
@@ -27,8 +31,12 @@ TEST(_404HandlerFactoryTest, createUsable404Handler)
   path p;
   p.info_map["root"] = " ";
   _404_handler_factory* factory = new _404_handler_factory("/", p);
+
+  // test user profile
+  user_profile profile;
+
   // create handler pointer
-  request_handler_interface* handler = factory->create("/", " ");
+  request_handler_interface* handler = factory->create("/", " ", profile);
 
   // Sample request to test.
   http::request<http::dynamic_body> request_;  

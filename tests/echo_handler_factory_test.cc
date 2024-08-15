@@ -11,8 +11,12 @@ TEST(echoHandlerFactoryTest, successfullyCreateEchoHandler)
   path p;
   p.info_map["root"] = "test path";
   echo_handler_factory* factory = new echo_handler_factory("/echo", p);
+
+  // test user profile
+  user_profile profile;
+
   // create handler pointer
-  request_handler_interface* handler = factory->create("/echo", "test url");
+  request_handler_interface* handler = factory->create("/echo", "test url", profile);
 
   // check if handler is nullptr
   bool success = (handler != nullptr);
@@ -27,8 +31,12 @@ TEST(echoHandlerFactoryTest, createUsableEchoHandler)
   path p;
   p.info_map["root"] = "test path";
   echo_handler_factory* factory = new echo_handler_factory("/echo", p);
+
+  // test user profile
+  user_profile profile;
+
   // create handler pointer
-  request_handler_interface* handler = factory->create("/echo", "test url");
+  request_handler_interface* handler = factory->create("/echo", "test url", profile);
 
   // Sample request to test.
   http::request<http::dynamic_body> request_;

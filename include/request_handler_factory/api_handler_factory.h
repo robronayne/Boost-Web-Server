@@ -14,7 +14,7 @@ class api_handler_factory : public request_handler_factory
 {
 	public:
 	  api_handler_factory(std::string location, path root_file_path);
-	  request_handler_interface* create(std::string location, std::string request_url);
+	  request_handler_interface* create(std::string location, std::string request_url, user_profile profile);
 	
 	private:
 

@@ -39,3 +39,52 @@ TEST_F(utilFixture, requestNotFound)
 
   EXPECT_TRUE(success);
 }
+
+// Test for correct response with sample user profile
+TEST_F(utilFixture, userProfile)
+{
+  user_profile sample_profile;
+
+  sample_profile.user_id = 1;
+  sample_profile.username = "sample_user";
+  sample_profile.email = "sample@example.com";
+  
+  std::string expected =  "<html>"
+                            "<body>"
+                              "<h1>User Profile</h1>"
+                              "<h3>User ID number: 1</h3>" 
+                              "<h3>Username: sample_user</h3>"
+                              "<h3>User Email Address: sample@example.com</h3>"
+                            "</body>"
+                          "</html>";
+
+  bool success = (util_.get_profile_reply(sample_profile) == expected);
+
+  EXPECT_TRUE(success);
+}
+
+// Test for correct response with nonexistant file
+TEST_F(utilFixture, fileNotExist)
+{
+  std::string data;
+  std::string path = "/doesnotexist.txt";
+  
+  std::string expected =  "";
+
+  bool success = (!util_.read_file(path, data) && data == "");
+
+  EXPECT_TRUE(success);
+}
+
+// Test for correct response with existent file
+TEST_F(utilFixture, fileDoesExist)
+{
+  std::string data;
+  std::string path = "../Readme.md";
+  
+  std::string expected =  "";
+
+  bool success = (util_.read_file(path, data) && data != "");
+
+  EXPECT_TRUE(success);
+}

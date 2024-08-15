@@ -7,10 +7,14 @@ TEST(sleepHandlerFactoryTest, successfullyCreateSleepHandler)
 {
   // create factory pointer
   path p;
+
+  // test user profile
+  user_profile profile;
+
   sleep_handler_factory* factory = new sleep_handler_factory("/sleep", p);
 
   // create handler pointer
-  request_handler_interface* handler = factory->create("/sleep", "test url");
+  request_handler_interface* handler = factory->create("/sleep", "test url", profile);
 
   // check if handler is nullptr
   bool success = (handler != nullptr);
@@ -23,8 +27,11 @@ TEST(sleepHandlerFactoryTest, createUsableSleepHandler)
   path p;
   sleep_handler_factory* factory = new sleep_handler_factory("/sleep", p);
 
+  // test user profile
+  user_profile profile;
+
   // create handler pointer
-  request_handler_interface* handler = factory->create("/sleep", "test url");
+  request_handler_interface* handler = factory->create("/sleep", "test url", profile);
   
   // Sample request to test.
   http::request<http::dynamic_body> request_;

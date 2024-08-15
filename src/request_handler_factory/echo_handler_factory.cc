@@ -7,7 +7,7 @@ echo_handler_factory::echo_handler_factory(std::string location, path root_file_
 
 }
 
-request_handler_interface* echo_handler_factory::create(std::string location, std::string request_url)
+request_handler_interface* echo_handler_factory::create(std::string location, std::string request_url, user_profile profile)
 {
   return new echo_handler(location, request_url);
 }

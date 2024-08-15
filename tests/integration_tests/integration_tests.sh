@@ -108,7 +108,8 @@ rm -rf ../database/entity_info.txt
 sleep 0.1
 
 # Curl server and create
-timeout $TIMEOUT curl -s -i -X POST -H "Host:" -H "User-Agent:" $SERVER_IP:$SERVER_PORT/api/test -d '{"a":111}'
+timeout $TIMEOUT curl -s -i --cookie "ngineers=0|test|test@example.com" -X POST -H "Host:" \
+                      -H "User-Agent:" $SERVER_IP:$SERVER_PORT/api/test -d '{"a":111}'
 
 # Check if file exists or not
 FILE=../database/test/1
@@ -170,7 +171,8 @@ fi
 TEST_8_SUCCESS=0
 
 # Curl server and update entity
-timeout $TIMEOUT curl -s -i -d '{"a":123}' -X PUT -H "Host:" -H "User-Agent:" $SERVER_IP:$SERVER_PORT/api/test/6
+timeout $TIMEOUT curl -s -i --cookie "ngineers=\"0|test|test@example.com\"" -d '{"a":123}' -X PUT \
+                      -H "Host:" -H "User-Agent:" $SERVER_IP:$SERVER_PORT/api/test/6
 
 # Curl server and get updated entity
 timeout $TIMEOUT curl -s -i -X GET -H "Host:" -H "User-Agent:" $SERVER_IP:$SERVER_PORT/api/test/6 > integration_test_8_result
@@ -194,7 +196,8 @@ fi
 TEST_9_SUCCESS=0
 
 # Curl server and delete
-timeout $TIMEOUT curl -s -i -X DELETE -H "Host:" -H "User-Agent:" $SERVER_IP:$SERVER_PORT/api/test/6
+timeout $TIMEOUT curl -s -i --cookie "ngineers=\"0|test|test@example.com\"" -X DELETE -H "Host:" \
+                      -H "User-Agent:" $SERVER_IP:$SERVER_PORT/api/test/6
 
 # Check if file exists or not
 FILE=../database/test/6

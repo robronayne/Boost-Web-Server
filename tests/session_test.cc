@@ -131,3 +131,51 @@ TEST_F(SessionFixture, setRoutes)
   std::map<std::string, request_handler_factory*> routes;
   EXPECT_TRUE(s.set_routes(routes));
 }
+
+// Test if cookie parses properly.
+TEST_F(SessionFixture, TestGoodCookieParsing)
+{
+  session s(io_service);
+
+  http::request<http::dynamic_body> request_;  
+  beast::ostream(request_.body()) << "test request";
+  request_.set(http::field::cookie, "ngineers=\"0|test|testy@testing.com\"");
+
+  user_profile test_user;
+  bool result = s.update_user(std::string(request_[http::field::cookie]), test_user);
+  
+  bool success = (result && test_user.user_id == 0 &&
+                 test_user.username == "test" && 
+                 test_user.email == "testy@testing.com");
+  EXPECT_TRUE(success);
+}
+
+// Test if bad cookie doesn't parse.
+TEST_F(SessionFixture, TestBadCookieParsing)
+{
+  session s(io_service);
+
+  http::request<http::dynamic_body> request_;  
+  beast::ostream(request_.body()) << "test request";
+  request_.set(http::field::cookie, "ngineers=\"ryery\"");
+
+  user_profile test_user;
+  bool result = s.update_user(std::string(request_[http::field::cookie]), test_user);
+  
+  EXPECT_TRUE(!result);
+}
+
+// Test if no cookies exist.
+TEST_F(SessionFixture, TestNoCookieParsing)
+{
+  session s(io_service);
+
+  http::request<http::dynamic_body> request_;  
+  beast::ostream(request_.body()) << "test request";
+  request_.set(http::field::cookie, "");
+
+  user_profile test_user;
+  bool result = s.update_user(std::string(request_[http::field::cookie]), test_user);
+  
+  EXPECT_TRUE(!result);
+}

@@ -37,6 +37,11 @@ include_directories(include)
 # https://stackoverflow.com/questions/5395309/how-do-i-force-cmake-to-include-pthread-option-during-compilation
 find_package(Threads REQUIRED)
 
+# Include OpenSSL for password hashing
+# https://stackoverflow.com/questions/45548088/include-openssl-in-a-cmakelist-txt-file
+set(OPENSSL_USE_STATIC_LIBS TRUE)
+find_package (OpenSSL REQUIRED)
+
 # Updated name and srcs
 add_library(server_lib src/server.cc)
 add_library(session_lib src/session.cc)
@@ -57,17 +62,25 @@ add_library(health_handler_lib src/request_handler/health_handler.cc)
 add_library(health_handler_factory_lib src/request_handler_factory/health_handler_factory.cc)
 add_library(sleep_handler_lib src/request_handler/sleep_handler.cc)
 add_library(sleep_handler_factory_lib src/request_handler_factory/sleep_handler_factory.cc)
+add_library(profile_handler_lib src/request_handler/profile_handler.cc)
+add_library(profile_handler_factory_lib src/request_handler_factory/profile_handler_factory.cc)
+add_library(authentication_handler_lib src/request_handler/authentication_handler.cc)
+add_library(authentication_handler_factory_lib src/request_handler_factory/authentication_handler_factory.cc)
+add_library(api_console_handler_lib src/request_handler/api_console_handler.cc)
+add_library(api_console_handler_factory_lib src/request_handler_factory/api_console_handler_factory.cc)
+add_library(profile_manager_lib src/profile_manager.cc)
 
 # Updated executable name, srcs, and deps
 add_executable(webserver src/server_main.cc)
 add_executable(config_parser_test tests/config_parser_test.cc)
 target_link_libraries(webserver server_lib session_lib config_parser_lib
                             echo_handler_factory_lib static_handler_factory_lib _404_handler_factory_lib api_handler_factory_lib
-                            health_handler_factory_lib sleep_handler_factory_lib
-                            echo_handler_lib _404_handler_lib error_hander_lib static_handler_lib 
-                            api_handler_lib health_handler_lib sleep_handler_lib
-                            mime_types_lib util_lib entity_manager_lib
-                            Boost::log_setup Boost::log Boost::system Threads::Threads)
+                            health_handler_factory_lib sleep_handler_factory_lib profile_handler_factory_lib 
+                            authentication_handler_factory_lib api_console_handler_factory_lib
+                            echo_handler_lib _404_handler_lib error_hander_lib static_handler_lib  api_handler_lib 
+                            health_handler_lib sleep_handler_lib profile_handler_lib authentication_handler_lib api_console_handler_lib
+                            mime_types_lib util_lib entity_manager_lib profile_manager_lib
+                            Boost::log_setup Boost::log Boost::system Threads::Threads OpenSSL::SSL)
 target_link_libraries(config_parser_test config_parser_lib 
                             Boost::log_setup Boost::log gtest_main)
 
@@ -76,17 +89,19 @@ add_executable(server_test tests/server_test.cc)
 target_link_libraries(server_test server_lib session_lib
                             error_hander_lib 
                             echo_handler_factory_lib static_handler_factory_lib _404_handler_factory_lib api_handler_factory_lib
-                            health_handler_factory_lib sleep_handler_factory_lib
+                            health_handler_factory_lib sleep_handler_factory_lib profile_handler_factory_lib 
+                            authentication_handler_factory_lib api_console_handler_factory_lib
                             echo_handler_lib static_handler_lib _404_handler_lib api_handler_lib health_handler_lib sleep_handler_lib
-                            mime_types_lib util_lib entity_manager_lib
-                            Boost::log_setup Boost::log gmock_main)
+                            profile_handler_lib authentication_handler_lib api_console_handler_lib 
+                            profile_handler_lib authentication_handler_lib mime_types_lib util_lib entity_manager_lib profile_manager_lib
+                            Boost::log_setup Boost::log gmock_main OpenSSL::SSL)
 
 # Add for session_test
 add_executable(session_test tests/session_test.cc)
 target_link_libraries(session_test session_lib echo_handler_factory_lib echo_handler_lib
                             error_hander_lib _404_handler_factory_lib _404_handler_lib
-                            static_handler_lib mime_types_lib util_lib
-                            Boost::log_setup Boost::log gtest_main)
+                            static_handler_lib mime_types_lib util_lib profile_manager_lib
+                            Boost::log_setup Boost::log gtest_main OpenSSL::SSL)
 
 # Add for echo_handler_test
 add_executable(echo_handler_test tests/echo_handler_test.cc)
@@ -107,6 +122,10 @@ target_link_libraries(static_handler_test static_handler_lib mime_types_lib util
 # Add for util test
 add_executable(util_test tests/util_test.cc)
 target_link_libraries(util_test util_lib Boost::filesystem gtest_main)
+
+# Add for profile_manager test
+add_executable(profile_manager_test tests/profile_manager_test.cc)
+target_link_libraries(profile_manager_test profile_manager_lib Boost::filesystem Boost::log_setup Boost::log gtest_main OpenSSL::SSL)
 
 # Add for echo_handler_factory test
 add_executable(echo_handler_factory_test tests/echo_handler_factory_test.cc)
@@ -146,6 +165,30 @@ target_link_libraries(sleep_handler_test sleep_handler_lib Boost::log_setup Boos
 add_executable(sleep_handler_factory_test tests/sleep_handler_factory_test.cc)
 target_link_libraries(sleep_handler_factory_test sleep_handler_factory_lib sleep_handler_lib Boost::log_setup Boost::log gtest_main)
 
+# Add for profile_handler_test
+add_executable(profile_handler_test tests/profile_handler_test.cc)
+target_link_libraries(profile_handler_test profile_handler_lib util_lib Boost::log_setup Boost::log gtest_main)
+
+# Add for profile_handler_factory test
+add_executable(profile_handler_factory_test tests/profile_handler_factory_test.cc)
+target_link_libraries(profile_handler_factory_test profile_handler_factory_lib profile_handler_lib util_lib Boost::log_setup Boost::log gtest_main)
+
+# Add for authentication_handler_test
+add_executable(authentication_handler_test tests/authentication_handler_test.cc)
+target_link_libraries(authentication_handler_test authentication_handler_lib util_lib profile_manager_lib Boost::log_setup Boost::log gtest_main OpenSSL::SSL)
+
+# Add for authentication_handler_factory test
+add_executable(authentication_handler_factory_test tests/authentication_handler_factory_test.cc)
+target_link_libraries(authentication_handler_factory_test authentication_handler_factory_lib authentication_handler_lib util_lib profile_manager_lib Boost::log_setup Boost::log gtest_main OpenSSL::SSL)
+
+# Add for api_console_handler_test
+add_executable(api_console_handler_test tests/api_console_handler_test.cc)
+target_link_libraries(api_console_handler_test api_console_handler_lib util_lib Boost::log_setup Boost::log gtest_main)
+
+# Add for api_console_handler_factory test
+add_executable(api_console_handler_factory_test tests/api_console_handler_factory_test.cc)
+target_link_libraries(api_console_handler_factory_test api_console_handler_factory_lib api_console_handler_lib util_lib Boost::log_setup Boost::log gtest_main)
+
 # Set testing directory
 gtest_discover_tests(config_parser_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(server_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
@@ -165,6 +208,13 @@ gtest_discover_tests(health_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURC
 gtest_discover_tests(health_handler_factory_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(sleep_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 gtest_discover_tests(sleep_handler_factory_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(profile_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(profile_handler_factory_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(authentication_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(authentication_handler_factory_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(api_console_handler_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(api_console_handler_factory_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+gtest_discover_tests(profile_manager_test WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
 
 # Add integration test
 add_test(NAME integration_tests COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests/integration_tests/integration_tests.sh WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/tests)
@@ -176,8 +226,14 @@ generate_coverage_report(TARGETS config_parser_lib server_lib session_lib echo_h
                                  echo_handler_factory_lib static_handler_factory_lib util_lib
                                  _404_handler_lib _404_handler_factory_lib api_handler_lib
                                  api_handler_factory_lib health_handler_factory_lib sleep_handler_factory_lib
+                                 authentication_handler_lib authentication_handler_factory_lib
+                                 profile_handler_lib profile_handler_factory_lib
+                                 api_console_handler_lib api_console_handler_factory_lib profile_manager_lib
                          TESTS config_parser_test server_test session_test echo_handler_test
                                error_handler_test health_handler_test sleep_handler_test mime_types_test static_handler_test
                                echo_handler_factory_test static_handler_factory_test util_test
                                _404_handler_test _404_handler_factory_test api_handler_test
-                               api_handler_test api_handler_factory_test health_handler_factory_test sleep_handler_factory_test)
+                               api_handler_test api_handler_factory_test health_handler_factory_test sleep_handler_factory_test
+                               profile_handler_test profile_handler_factory_test
+                               authentication_handler_test authentication_handler_factory_test
+                               api_console_handler_test api_console_handler_factory_test profile_manager_test)

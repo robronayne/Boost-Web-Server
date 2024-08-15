@@ -21,8 +21,12 @@ COPY --from=builder /usr/src/project/build/bin/webserver .
 COPY --from=builder /usr/src/project/config/deploy_config .
 COPY --from=builder /usr/src/project/tests/static_files .
 
+# Copy auth handler directory
+RUN mkdir ./credentials
+COPY --from=builder /usr/src/project/tests/credentials ./credentials
+
 # Create api directory
-RUN mkdir /api
+RUN mkdir ./api
 
 # Expose some port(s)
 EXPOSE 80

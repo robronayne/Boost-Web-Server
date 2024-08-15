@@ -24,3 +24,18 @@ location /health HealthHandler {
 
 location /sleep SleepHandler {
 }
+
+location /profile ProfileHandler { 
+}
+
+location /auth AuthenticationHandler {
+  data_path api;
+  root credentials;
+  login /login;
+  signup /signup;
+  logout /logout;
+}
+
+location /console ApiConsoleHandler {
+  root credentials;
+}

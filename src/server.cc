@@ -11,6 +11,9 @@
 #include "request_handler_factory/api_handler_factory.h"
 #include "request_handler_factory/health_handler_factory.h"
 #include "request_handler_factory/sleep_handler_factory.h"
+#include "request_handler_factory/authentication_handler_factory.h"
+#include "request_handler_factory/profile_handler_factory.h"
+#include "request_handler_factory/api_console_handler_factory.h"
 
 /** 
  * Constructor for the server class.
@@ -107,6 +110,15 @@ std::map<std::string, request_handler_factory*> server::create_handler_factory(p
     case endpoint_type::sleep_:
       routes[p.endpoint] = new sleep_handler_factory(p.endpoint, p);
     break;
+    case endpoint_type::auth:
+      routes[p.endpoint] = new authentication_handler_factory(p.endpoint, p);
+    break;
+    case endpoint_type::profile:
+      routes[p.endpoint] = new profile_handler_factory(p.endpoint, p);
+      break;
+    case endpoint_type::console:
+      routes[p.endpoint] = new api_console_handler_factory(p.endpoint, p);
+      break;
     case endpoint_type::not_found:
       routes[p.endpoint] = new _404_handler_factory(p.endpoint, p);
     break;

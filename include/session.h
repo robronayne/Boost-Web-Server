@@ -55,6 +55,10 @@ class session : public session_interface
     std::string match(std::map<std::string, request_handler_factory*> routes, std::string url);
     
     bool set_request(http::request<http::dynamic_body> request);
+    bool update_user(std::string cookie_string, user_profile& user);
+
+    void logIn() {profile.login_status = true;}
+    void logOut() {profile.login_status = false;}
 
   private:
     tcp::socket socket_;
@@ -68,5 +72,8 @@ class session : public session_interface
     std::string get_info();
 
     std::map<std::string, request_handler_factory*> routes_;
+
+    // default user profile
+    user_profile profile = {0, "", "", false};
 };
 #endif
